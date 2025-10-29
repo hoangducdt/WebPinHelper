@@ -47,10 +47,38 @@ function switchSection(sectionName) {
 }
 
 // ===== Tabs Management =====
+// ===== Tabs Management =====
+// ===== Tabs Management =====
 function initTabs() {
     document.querySelector('.add-tab-btn').addEventListener('click', addNewTab);
-    document.querySelector('[data-tab="1"]').addEventListener('click', () => switchTab(1));
-    document.querySelector('.tab-close').addEventListener('click', (e) => closeTab(1, e));
+    
+    // Khởi tạo event listeners cho tab đầu tiên
+    setupTabEvents(1);
+    switchTab(1); // Đảm bảo tab đầu tiên được active
+}
+
+function setupTabEvents(tabId) {
+    const tabElement = document.querySelector(`.tab[data-tab="${tabId}"]`);
+    const closeBtn = tabElement?.querySelector('.tab-close');
+    
+    if (tabElement && closeBtn) {
+        // Xóa event listeners cũ nếu có
+        tabElement.replaceWith(tabElement.cloneNode(true));
+        const newTabElement = document.querySelector(`.tab[data-tab="${tabId}"]`);
+        const newCloseBtn = newTabElement.querySelector('.tab-close');
+        
+        // Thêm event listeners mới
+        newTabElement.addEventListener('click', (e) => {
+            if (!e.target.classList.contains('tab-close')) {
+                switchTab(tabId);
+            }
+        });
+        
+        newCloseBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            closeTab(tabId);
+        });
+    }
 }
 
 function addNewTab() {
@@ -58,7 +86,7 @@ function addNewTab() {
     const tabsHeader = document.getElementById('tabs-header');
     const addBtn = tabsHeader.querySelector('.add-tab-btn');
     
-    // Create new tab
+    // Tạo tab mới
     const newTab = document.createElement('div');
     newTab.className = 'tab';
     newTab.dataset.tab = AppState.tabCounter;
@@ -66,12 +94,10 @@ function addNewTab() {
         <span class="tab-name">Tab ${AppState.tabCounter}</span>
         <button class="tab-close">×</button>
     `;
-    newTab.addEventListener('click', () => switchTab(AppState.tabCounter));
-    newTab.querySelector('.tab-close').addEventListener('click', (e) => closeTab(AppState.tabCounter, e));
     
     tabsHeader.insertBefore(newTab, addBtn);
     
-    // Create new content
+    // Tạo nội dung mới
     const tabsContent = document.querySelector('.tabs-content');
     const newContent = document.createElement('div');
     newContent.className = 'tab-content';
@@ -79,19 +105,46 @@ function addNewTab() {
     newContent.innerHTML = `<textarea class="data-input" placeholder="Paste WPF data here..."></textarea>`;
     
     tabsContent.appendChild(newContent);
+    
+    // Thiết lập events cho tab mới
+    setupTabEvents(AppState.tabCounter);
     switchTab(AppState.tabCounter);
 }
 
 function switchTab(tabId) {
-    document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
-    document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+    console.log('Switching to tab:', tabId);
     
-    document.querySelector(`[data-tab="${tabId}"]`).classList.add('active');
-    document.getElementById(`tab-content-${tabId}`).classList.add('active');
+    // Ẩn tất cả tab
+    document.querySelectorAll('.tab').forEach(tab => {
+        tab.classList.remove('active');
+    });
+    document.querySelectorAll('.tab-content').forEach(content => {
+        content.classList.remove('active');
+    });
+    
+    // Hiển thị tab được chọn
+    const tabElement = document.querySelector(`.tab[data-tab="${tabId}"]`);
+    const contentElement = document.getElementById(`tab-content-${tabId}`);
+    
+    if (tabElement && contentElement) {
+        tabElement.classList.add('active');
+        contentElement.classList.add('active');
+    } else {
+        console.error('Tab not found:', tabId);
+    }
 }
 
-function closeTab(tabId, event) {
-    event.stopPropagation();
+function closeTab(tabId) {
+    console.log('Closing tab:', tabId);
+    
+    const tabElement = document.querySelector(`.tab[data-tab="${tabId}"]`);
+    const contentElement = document.getElementById(`tab-content-${tabId}`);
+    
+    // Kiểm tra xem tab có tồn tại không
+    if (!tabElement || !contentElement) {
+        console.warn('Tab not found for closing:', tabId);
+        return;
+    }
     
     const tabs = document.querySelectorAll('.tab');
     if (tabs.length <= 1) {
@@ -99,19 +152,28 @@ function closeTab(tabId, event) {
         return;
     }
     
-    const tabElement = document.querySelector(`[data-tab="${tabId}"]`);
-    const contentElement = document.getElementById(`tab-content-${tabId}`);
     const wasActive = tabElement.classList.contains('active');
+    let switchToTabId = null;
     
+    // Tìm tab để chuyển đến
+    const allTabs = Array.from(document.querySelectorAll('.tab'));
+    for (let i = 0; i < allTabs.length; i++) {
+        const currentTabId = parseInt(allTabs[i].dataset.tab);
+        if (currentTabId !== tabId) {
+            switchToTabId = currentTabId;
+            break;
+        }
+    }
+    
+    // Xóa tab và nội dung
     tabElement.remove();
     contentElement.remove();
     
-    if (wasActive) {
-        const remainingTabs = document.querySelectorAll('.tab');
-        if (remainingTabs.length > 0) {
-            const firstTabId = remainingTabs[0].dataset.tab;
-            switchTab(firstTabId);
-        }
+    // Chuyển sang tab khác nếu tab đóng đang active
+    if (wasActive && switchToTabId) {
+        setTimeout(() => {
+            switchTab(switchToTabId);
+        }, 10);
     }
 }
 
