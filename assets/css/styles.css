@@ -34,7 +34,7 @@ body {
 
 a {
     text-decoration: none;
-    color: rgb(255, 255, 255);
+    color: currentColor;
 }
 a:hover {
     text-decoration: none;
@@ -412,6 +412,12 @@ a:hover {
 
 /* ===== Logo Icon Styles ===== */
 .logo-section h1 {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+}
+
+.logo-section h3 {
     display: flex;
     align-items: center;
     gap: 0.8rem;
