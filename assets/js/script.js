@@ -6,7 +6,8 @@ const AppState = {
     currentResults: [],
     currentPins: [],
     customPins: [],
-    currentPin1: null  // Add this line
+    currentPin1: null,
+    pinScale: 20 
 };
 
 // ===== Initialization =====
@@ -178,7 +179,7 @@ function closeTab(tabId) {
 // ===== Product Selector =====
 function initProductSelector() {
     // Simulate loading pinmap files - add more products as needed
-    const products = ['SLD', 'CFD', 'CFH', 'CMD', 'X74'];
+    const products = ['SLD', 'CFD', 'CFH', 'CMD', 'CLC', 'WHL', 'X74'];
     
     const selectors = ['product-select', 'product-select-2'];
     selectors.forEach(id => {
@@ -210,6 +211,8 @@ async function loadPinmapFiles() {
         'CFD': './assets/pinmap/CMD.pinmap',
         'CFH': './assets/pinmap/CMD.pinmap',
         'CMD': './assets/pinmap/CMD.pinmap',
+        'CLC': './assets/pinmap/CLC.pinmap',
+        'WHL': './assets/pinmap/WHL.pinmap',
         'X74': './assets/pinmap/X74.pinmap'
     };
     
@@ -707,9 +710,13 @@ function initPinMapModal() {
     document.getElementById('save-pinmap').addEventListener('click', savePinMapImage);
     document.getElementById('save-pinmap-data').addEventListener('click', savePinMapData);
     
-    // Thêm event listeners cho các nút flip
+    document.getElementById('clear-fill').addEventListener('click', clearPinFill);
     document.getElementById('flip-horizontal').addEventListener('click', flipHorizontal);
     document.getElementById('flip-vertical').addEventListener('click', flipVertical);
+    document.getElementById('rotate-left').addEventListener('click', rotateLeft);
+    document.getElementById('rotate-right').addEventListener('click', rotateRight);
+    document.getElementById('zoom-in').addEventListener('click', increasePinSpacing);
+    document.getElementById('zoom-out').addEventListener('click', decreasePinSpacing);
     
     // Close modal when clicking outside
     document.getElementById('pinmap-modal').addEventListener('click', (e) => {
@@ -767,7 +774,7 @@ function drawPinMap() {
     const minX = Math.min(...pinmapData.map(p => p.x));
     const minY = Math.min(...pinmapData.map(p => p.y));
     
-    const scale = 20;
+    const scale = AppState.pinScale;
     const padding = 50;
     
     canvas.width = (maxX - minX + 2) * scale + padding * 2;
@@ -848,7 +855,7 @@ function drawPinMap() {
     pinmapData.forEach(pin => {
         const x = (pin.x - minX) * scale + padding;
         const y = canvas.height - ((pin.y - minY) * scale + padding);
-        const radius = 25;
+        const radius = 30;
         
         const isHighlighted = highlightPins.includes(pin.pinName);
         
@@ -995,7 +1002,23 @@ function escapeHtml(text) {
     return div.innerHTML;
 }
 
-// ===== Flip Functions =====
+function clearPinFill() {
+    const choice = confirm('Clear ALL fill color pins (OK) or only CUSTOM fill color pins (Cancel)?');
+    
+    if (choice) {
+        // Clear tất cả
+        AppState.currentPins = [];
+        AppState.customPins = [];
+        console.log('Cleared all pin colors');
+    } else {
+        // Chỉ clear custom pins
+        AppState.customPins = [];
+        console.log('Cleared custom pin colors only');
+    }
+    
+    drawPinMap();
+}
+
 function flipHorizontal() {
     if (!AppState.currentProduct || !AppState.pinmapData[AppState.currentProduct]) {
         return;
@@ -1035,6 +1058,65 @@ function flipVertical() {
     
     drawPinMap();
 }
+function rotateRight() {
+    if (!AppState.currentProduct || !AppState.pinmapData[AppState.currentProduct]) {
+        return;
+    }
+    
+    const pinmapData = AppState.pinmapData[AppState.currentProduct];
+    const maxX = Math.max(...pinmapData.map(p => p.x));
+    const maxY = Math.max(...pinmapData.map(p => p.y));
+    
+    // Rotate 90 degrees counter-clockwise: (x, y) -> (y, maxX - x)
+    for (let i = 0; i < pinmapData.length; i++) {
+        const oldX = pinmapData[i].x;
+        const oldY = pinmapData[i].y;
+        pinmapData[i].x = oldY;
+        pinmapData[i].y = maxX - oldX;
+    }
+    
+    // Recalculate pin 1 based on new coordinates
+    AppState.currentPin1 = findPin1(pinmapData);
+    console.log(`After 90° left rotation - Pin 1: ${AppState.currentPin1.pinName} at (${AppState.currentPin1.x}, ${AppState.currentPin1.y})`);
+    
+    drawPinMap();
+}
+
+function rotateLeft() {
+    if (!AppState.currentProduct || !AppState.pinmapData[AppState.currentProduct]) {
+        return;
+    }
+    
+    const pinmapData = AppState.pinmapData[AppState.currentProduct];
+    const maxX = Math.max(...pinmapData.map(p => p.x));
+    const maxY = Math.max(...pinmapData.map(p => p.y));
+    
+    // Rotate 90 degrees clockwise: (x, y) -> (maxY - y, x)
+    for (let i = 0; i < pinmapData.length; i++) {
+        const oldX = pinmapData[i].x;
+        const oldY = pinmapData[i].y;
+        pinmapData[i].x = maxY - oldY;
+        pinmapData[i].y = oldX;
+    }
+    
+    // Recalculate pin 1 based on new coordinates
+    AppState.currentPin1 = findPin1(pinmapData);
+    console.log(`After 90° right rotation - Pin 1: ${AppState.currentPin1.pinName} at (${AppState.currentPin1.x}, ${AppState.currentPin1.y})`);
+    
+    drawPinMap();
+}
+
+function increasePinSpacing() {
+    AppState.pinScale = Math.min(50, AppState.pinScale + 2);
+    console.log(`Pin spacing increased to: ${AppState.pinScale}`);
+    drawPinMap();
+}
+
+function decreasePinSpacing() {
+    AppState.pinScale = Math.max(10, AppState.pinScale - 2);
+    console.log(`Pin spacing decreased to: ${AppState.pinScale}`);
+    drawPinMap();
+}
 
 function savePinMapData() {
     if (!AppState.currentProduct || !AppState.pinmapData[AppState.currentProduct]) {
@@ -1050,8 +1132,8 @@ function savePinMapData() {
             pin.pinName,
             pin.name,
             pin.components,
-            pin.x,
-            pin.y,
+            pin.x * AppState.pinScale / 20,  // Nhân với scale ratio
+            pin.y * AppState.pinScale / 20,  // Nhân với scale ratio
             pin.site0 || '',
             pin.site2 || '',
             pin.site4 || '',
@@ -1063,7 +1145,7 @@ function savePinMapData() {
     const blob = new Blob([csvContent], { type: 'text/plain;charset=utf-8' });
     const link = document.createElement('a');
     link.href = URL.createObjectURL(blob);
-    link.download = `${AppState.currentProduct}_flipped_${Date.now()}.pinmap`;
+    link.download = `${AppState.currentProduct}_scaled_${Date.now()}.pinmap`;
     link.click();
     URL.revokeObjectURL(link.href);
 }
