@@ -937,7 +937,7 @@ function enableCanvasDragging(canvas) {
         const scaledCanvasHeight = canvasRect.height;
         
         // Calculate max scroll values - cho phép scroll thêm một chút để border không bị cắt
-        const extraPadding = 10; // Thêm padding để đảm bảo border không bị cắt
+        const extraPadding = 5; // Thêm padding để đảm bảo border không bị cắt
         const maxScrollX = Math.max(0, scaledCanvasWidth - wrapperRect.width + extraPadding);
         const maxScrollY = Math.max(0, scaledCanvasHeight - wrapperRect.height + extraPadding);
         

@@ -104,7 +104,22 @@
 
                     <div class="tabs-content">
                         <div class="tab-content active" id="tab-content-1">
-                            <textarea class="data-input" placeholder="Paste WPF data here..."></textarea>
+                            <textarea id="position-textarea" class="data-input" 
+                        placeholder="Copy and paste returned test data here...
+Example:
+3_prtnm_522
+3_dvtststdt_20251029001352
+3_socket_0
+3_tstordnum_91
+3_thermalhdid_RB1
+3_tiuid_CFDLGV60L16
+3_eqpprtid_000000000001160
+2_lbeg
+...
+3_subflstpid_CLASSHOT
+3_binn_90545418
+3_curfbin_5418
+3_curibin_54"></textarea>
                         </div>
                     </div>
                 </div>
@@ -168,10 +183,18 @@
 
                 <div class="input-container">
                     <textarea id="position-textarea" class="data-input" 
-                        placeholder="Paste data with format: Count	Channel	Pin	Position
+                        placeholder="Paste data with format: 
+Count	Channel	Pin	Position
 Example:
 6	1604003	DDRDQSN_IL01_NIL01	AK39
-4	1606119	DDRDQ_IL16_NIL16[0]	AM10"></textarea>
+4	1606119	DDRDQ_IL16_NIL16[0]	AM10
+3	1606097	DDRDQ_IL06_NIL14[4]	AP4
+3	1606097	DDRDQ_IL06_NIL14_4	
+2	1606119	DDRDQ_IL16_NIL16_0	
+...
+2	1605073	DDRDQ_IL14_NIL12[4]	AR13
+2	1605073	DDRDQ_IL14_NIL12_4	
+2	1605059	DDRDQ_IL07_NIL15[2]	AK4"></textarea>
                 </div>
 
                 <div class="search-controls">
