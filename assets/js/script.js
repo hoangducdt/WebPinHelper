@@ -876,6 +876,12 @@ function drawPinMap() {
         ctx.fillText(pin.pinName, x, y);
     });
     
+    const wrapper = canvas.parentElement;
+    wrapper.scrollLeft = 0;
+    wrapper.scrollTop = 0;
+    
+    enableCanvasDragging(canvas);
+    
     // Update pin count
     const totalPins = pinmapData.length;
     const highlightedCount = highlightPins.filter(p => 
@@ -884,8 +890,6 @@ function drawPinMap() {
     
     document.getElementById('pin-count-display').textContent = 
         `Total pins: ${highlightedCount}/${totalPins}`;
-    
-    enableCanvasDragging(canvas);
 }
 
 function findPin1(pinmapData) {
@@ -923,6 +927,73 @@ function enableCanvasDragging(canvas) {
     // Initialize transform origin
     canvas.style.transformOrigin = 'top left';
     
+    // Calculate max scroll values based on canvas size and scale
+    const updateScrollLimits = () => {
+        const canvasRect = canvas.getBoundingClientRect();
+        const wrapperRect = wrapper.getBoundingClientRect();
+        
+        // Calculate actual canvas dimensions including scale
+        const scaledCanvasWidth = canvasRect.width;
+        const scaledCanvasHeight = canvasRect.height;
+        
+        // Calculate max scroll values - cho phép scroll thêm một chút để border không bị cắt
+        const extraPadding = 10; // Thêm padding để đảm bảo border không bị cắt
+        const maxScrollX = Math.max(0, scaledCanvasWidth - wrapperRect.width + extraPadding);
+        const maxScrollY = Math.max(0, scaledCanvasHeight - wrapperRect.height + extraPadding);
+        
+        return { maxScrollX, maxScrollY, scaledCanvasWidth, scaledCanvasHeight };
+    };
+    
+    // Hàm constraint scroll position
+    const constrainScroll = (scrollX, scrollY) => {
+        const { maxScrollX, maxScrollY, scaledCanvasWidth, scaledCanvasHeight } = updateScrollLimits();
+        const wrapperRect = wrapper.getBoundingClientRect();
+        
+        // Nếu canvas nhỏ hơn wrapper, cho phép scroll một chút để căn giữa
+        if (scaledCanvasWidth <= wrapperRect.width) {
+            // Cho phép scroll trong khoảng từ -extraPadding đến 0 để căn giữa
+            const extraPadding = 10;
+            scrollX = Math.max(-extraPadding, Math.min(0, scrollX));
+        } else {
+            scrollX = Math.max(0, Math.min(maxScrollX, scrollX));
+        }
+        
+        if (scaledCanvasHeight <= wrapperRect.height) {
+            // Cho phép scroll trong khoảng từ -extraPadding đến 0 để căn giữa
+            const extraPadding = 10;
+            scrollY = Math.max(-extraPadding, Math.min(0, scrollY));
+        } else {
+            scrollY = Math.max(0, Math.min(maxScrollY, scrollY));
+        }
+        
+        return { scrollX, scrollY };
+    };
+    
+    // Reset scroll position để đảm bảo border hiển thị đầy đủ
+    const resetToProperPosition = () => {
+        const { maxScrollX, maxScrollY, scaledCanvasWidth, scaledCanvasHeight } = updateScrollLimits();
+        const wrapperRect = wrapper.getBoundingClientRect();
+        
+        let newScrollX = wrapper.scrollLeft;
+        let newScrollY = wrapper.scrollTop;
+        
+        // Nếu canvas nhỏ hơn wrapper, căn giữa
+        if (scaledCanvasWidth <= wrapperRect.width) {
+            newScrollX = -5; // Scroll nhẹ để border hiển thị đầy đủ
+        } else {
+            newScrollX = Math.min(maxScrollX, newScrollX);
+        }
+        
+        if (scaledCanvasHeight <= wrapperRect.height) {
+            newScrollY = -5; // Scroll nhẹ để border hiển thị đầy đủ
+        } else {
+            newScrollY = Math.min(maxScrollY, newScrollY);
+        }
+        
+        wrapper.scrollLeft = newScrollX;
+        wrapper.scrollTop = newScrollY;
+    };
+    
     wrapper.addEventListener('mousedown', (e) => {
         isDragging = true;
         wrapper.style.cursor = 'grabbing';
@@ -940,17 +1011,28 @@ function enableCanvasDragging(canvas) {
     wrapper.addEventListener('mouseup', () => {
         isDragging = false;
         wrapper.style.cursor = 'grab';
+        // Sau khi kéo xong, đảm bảo vị trí scroll hợp lệ
+        resetToProperPosition();
     });
     
     wrapper.addEventListener('mousemove', (e) => {
         if (!isDragging) return;
         e.preventDefault();
+        
         const x = e.pageX - wrapper.offsetLeft;
         const y = e.pageY - wrapper.offsetTop;
         const walkX = (x - startX) * 2;
         const walkY = (y - startY) * 2;
-        wrapper.scrollLeft = scrollLeft - walkX;
-        wrapper.scrollTop = scrollTop - walkY;
+        
+        // Calculate new scroll position
+        let newScrollLeft = scrollLeft - walkX;
+        let newScrollTop = scrollTop - walkY;
+        
+        // Apply constraints
+        const constrained = constrainScroll(newScrollLeft, newScrollTop);
+        
+        wrapper.scrollLeft = constrained.scrollX;
+        wrapper.scrollTop = constrained.scrollY;
     });
     
     // Zoom support with proper scroll area update
@@ -961,8 +1043,7 @@ function enableCanvasDragging(canvas) {
         // Calculate new scale
         const newScale = Math.max(0.5, Math.min(5, currentScale * delta));
         
-        // Get mouse position relative to canvas
-        const rect = canvas.getBoundingClientRect();
+        // Get current scroll and dimensions before zoom
         const wrapperRect = wrapper.getBoundingClientRect();
         const mouseX = e.clientX - wrapperRect.left + wrapper.scrollLeft;
         const mouseY = e.clientY - wrapperRect.top + wrapper.scrollTop;
@@ -974,17 +1055,47 @@ function enableCanvasDragging(canvas) {
         currentScale = newScale;
         canvas.style.transform = `scale(${currentScale})`;
         
-        // Force wrapper to update its scrollable area
-        // by temporarily changing canvas display
+        // Force reflow để cập nhật kích thước
+        canvas.getBoundingClientRect();
+        
+        // Adjust scroll position to keep zoom centered on mouse
         requestAnimationFrame(() => {
-            // Adjust scroll position to keep zoom centered on mouse
-            wrapper.scrollLeft = mouseX * scaleChange - (e.clientX - wrapperRect.left);
-            wrapper.scrollTop = mouseY * scaleChange - (e.clientY - wrapperRect.top);
+            let newScrollX = mouseX * scaleChange - (e.clientX - wrapperRect.left);
+            let newScrollY = mouseY * scaleChange - (e.clientY - wrapperRect.top);
+            
+            // Apply constraints
+            const constrained = constrainScroll(newScrollX, newScrollY);
+            
+            wrapper.scrollLeft = constrained.scrollX;
+            wrapper.scrollTop = constrained.scrollY;
+            
+            // Đảm bảo border không bị cắt sau khi zoom
+            setTimeout(resetToProperPosition, 50);
         });
     });
     
+    // Reset scroll khi vẽ lại pinmap
+    const resetScroll = () => {
+        currentScale = 1;
+        canvas.style.transform = 'scale(1)';
+        
+        // Sau khi reset scale, đặt scroll position phù hợp
+        setTimeout(() => {
+            resetToProperPosition();
+        }, 100);
+    };
+    
     // Set initial cursor
     wrapper.style.cursor = 'grab';
+    
+    // Update wrapper overflow to enable scrolling
+    wrapper.style.overflow = 'auto';
+    
+    // Khởi tạo vị trí scroll ban đầu
+    setTimeout(resetToProperPosition, 100);
+    
+    // Return reset function để có thể gọi từ bên ngoài
+    return { resetScroll };
 }
 
 function savePinMapImage() {
