@@ -181,7 +181,7 @@ function closeTab(tabId) {
 // ===== Product Selector =====
 function initProductSelector() {
     // Simulate loading pinmap files - add more products as needed
-    const products = ['SKL', 'CFD', 'CFH', 'CML S62', 'CML S102', 'CNP', 'WHL', 'X74'];
+    const products = ['ADP', 'CNP', 'CFD', 'CFH', 'CML S102', 'CML S62', 'GSR', 'HSW', 'U42', 'LBG', 'MPR', 'MTL', 'SKL', 'U22', 'TGP', 'WHL', 'X74', 'X76'];
     
     const selectors = ['product-select', 'product-select-2'];
     selectors.forEach(id => {
@@ -209,17 +209,26 @@ function initProductSelector() {
 
 async function loadPinmapFiles() {
     const pinmapFiles = {
-        'SKL': './assets/pinmap/CMD.pinmap',
-        'CFD': './assets/pinmap/CMD.pinmap',
-        'CFH': './assets/pinmap/CMD.pinmap',
+        'ADP': './assets/pinmap/ADP.pinmap',
+        'CNP': './assets/pinmap/CNP.pinmap',
+        'CFD': './assets/pinmap/ADP.pinmap',
+        'CFH': './assets/pinmap/ADP.pinmap',
+        'CML S102': './assets/pinmap/ADP.pinmap',
         'CML S62': './assets/pinmap/S62.pinmap',
-        'CML S102': './assets/pinmap/S102.pinmap',
-        'CNP': './assets/pinmap/CLC.pinmap',
-        'WHL': './assets/pinmap/WHL.pinmap',
-        'X74': './assets/pinmap/X74.pinmap'
+        'GSR': './assets/pinmap/ADP.pinmap',
+        'HSW': './assets/pinmap/ADP.pinmap',
+        'U42': './assets/pinmap/ADP.pinmap',
+        'LBG': './assets/pinmap/ADP.pinmap',
+        'MPR': './assets/pinmap/ADP.pinmap',
+        'MTL': './assets/pinmap/ADP.pinmap',
+        'SKL': './assets/pinmap/ADP.pinmap',
+        'U22': './assets/pinmap/ADP.pinmap',
+        'TGP': './assets/pinmap/ADP.pinmap',
+        'WHL': './assets/pinmap/ADP.pinmap',
+        'X74': './assets/pinmap/X74.pinmap',
+        'X76': './assets/pinmap/ADP.pinmap'
     };
-    
-    // Load all pinmap files
+
     for (const [product, filePath] of Object.entries(pinmapFiles)) {
         try {
             const response = await fetch(filePath);
@@ -237,6 +246,63 @@ async function loadPinmapFiles() {
             // Fallback to empty data
             AppState.pinmapData[product] = [];
         }
+    }
+}
+
+function autoSelectProduct(tiuValue) {
+    const productSelect = document.getElementById('product-select');
+    
+    if (!productSelect || !tiuValue || tiuValue.length < 7) return;
+    
+    // Extract first 3 letters and 6th-7th characters (index 5-6)
+    const first3 = tiuValue.substring(0, 3).toUpperCase();
+    const chars67 = tiuValue.substring(5, 7).toUpperCase();
+    const productKey = first3 + chars67;
+    
+    console.log(`TIU: ${tiuValue}, Extracted: ${productKey}`);
+    
+    // Product mapping table
+    const productsData = {
+        'ADCV4': 'ADP',
+        'CLCV8': 'CNP',
+        'CFDV6': 'CFD',
+        'CFDV4': 'CFH',
+        'CMDV4': 'CML S102',
+        'CMDV6': 'CML S62',
+        'GSRV8': 'GSR',
+        'HWDV8': 'HSW',
+        'KUMV6': 'U42',
+        'LBGX6': 'LBG',
+        'MPRV8': 'MPR',
+        'MTCV4': 'MTL',
+        'SLDV8': 'SKL',
+        'SUMV6': 'U22',
+        'TGLA6': 'TGP',
+        'WHMV4': 'WHL',
+        'L747L': 'X74',
+        'L767L': 'X76'
+    };
+    
+    const productName = productsData[productKey];
+    
+    if (productName) {
+        // Find matching product option
+        const options = Array.from(productSelect.options);
+        const matchingOption = options.find(option => 
+            option.value && option.value === productName
+        );
+        
+        if (matchingOption) {
+            productSelect.value = matchingOption.value;
+            AppState.currentProduct = matchingOption.value;
+            loadPinmapData(matchingOption.value);
+            
+            console.log(`Auto-selected product: ${matchingOption.value} based on TIU key: ${productKey}`);
+        } else {
+            console.log(`Product name found (${productName}) but not in select options`);
+        }
+    } else {
+        console.log(`No product found for TIU key: ${productKey}`);
     }
 }
 
@@ -379,53 +445,6 @@ function searchFaildata() {
     });
     
     displayResults(results);
-}
-
-// ===== Auto Product Selection =====
-function autoSelectProduct(tiuValue) {
-    const productSelect = document.getElementById('product-select');
-    
-    if (!productSelect || !tiuValue || tiuValue.length < 7) return;
-    
-    // Extract first 3 letters and 6th-7th characters (index 5-6)
-    const first3 = tiuValue.substring(0, 3).toUpperCase();
-    const chars67 = tiuValue.substring(5, 7).toUpperCase();
-    const productKey = first3 + chars67;
-    
-    console.log(`TIU: ${tiuValue}, Extracted: ${productKey}`);
-    
-    // Product mapping table
-    const productsData = {
-        'SLDV8': 'SKL',
-        'CFDV4': 'CFD',
-        'CFHV4': 'CFH',
-        'CMDV6': 'CML S62',
-        'CMDV4': 'CML S102',
-        'WHLV4': 'WHL',
-        'X74V4': 'X74'
-    };
-    
-    const productName = productsData[productKey];
-    
-    if (productName) {
-        // Find matching product option
-        const options = Array.from(productSelect.options);
-        const matchingOption = options.find(option => 
-            option.value && option.value === productName
-        );
-        
-        if (matchingOption) {
-            productSelect.value = matchingOption.value;
-            AppState.currentProduct = matchingOption.value;
-            loadPinmapData(matchingOption.value);
-            
-            console.log(`Auto-selected product: ${matchingOption.value} based on TIU key: ${productKey}`);
-        } else {
-            console.log(`Product name found (${productName}) but not in select options`);
-        }
-    } else {
-        console.log(`No product found for TIU key: ${productKey}`);
-    }
 }
 
 function displayResults(results) {
