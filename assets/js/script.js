@@ -6,6 +6,8 @@ const AppState = {
     currentResults: [],
     currentPins: [],
     customPins: [],
+    pinsBySite: {},
+    availableSites: [],
     currentPin1: null,
     pinScale: 20 
 };
@@ -275,6 +277,10 @@ function loadPinmapData(product) {
 function initSearchButtons() {
     document.getElementById('search-btn').addEventListener('click', searchFaildata);
     document.getElementById('analyze-position-btn').addEventListener('click', analyzePosition);
+    document.getElementById('show-pinmap-btn').addEventListener('click', () => {
+        const selectedSite = document.getElementById('site-select').value;
+        showPinMap('faildata', selectedSite);
+    });
 }
 
 function searchFaildata() {
@@ -425,29 +431,21 @@ function autoSelectProduct(tiuValue) {
 function displayResults(results) {
     const resultsContainer = document.getElementById('results-area');
     const pinListContainer = document.getElementById('pin-list-results');
-    const pinListContent = document.querySelector('.pin-list-content');
     
     if (results.length === 0) {
         resultsContainer.innerHTML = '<div class="no-results">No Fail Data found</div>';
         pinListContainer.style.display = 'none';
-        document.getElementById('show-pinmap-btn').style.display = 'none';
+        document.getElementById('site-selector-container').style.display = 'none';
         return;
     }
     
-    // Count values (allowing duplicates with different bins)
     const valueData = {};
     results.forEach(result => {
         result.faildataValues.forEach(value => {
             if (value) {
                 const key = `${value}_${result.curfbin}`;
                 if (!valueData[key]) {
-                    valueData[key] = {
-                        value: value,
-                        count: 0,
-                        curfbin: result.curfbin,
-                        tiu: result.tiu,
-                        site: result.site
-                    };
+                    valueData[key] = {value: value, count: 0, curfbin: result.curfbin, tiu: result.tiu, site: result.site};
                 }
                 valueData[key].count++;
             }
@@ -457,76 +455,150 @@ function displayResults(results) {
     const sortedValues = Object.values(valueData).sort((a, b) => {
         const aNum = parseInt(a.value);
         const bNum = parseInt(b.value);
-        if (!isNaN(aNum) && !isNaN(bNum)) {
-            return aNum - bNum;
-        }
+        if (!isNaN(aNum) && !isNaN(bNum)) return aNum - bNum;
         return a.value.localeCompare(b.value);
     });
     
     AppState.currentResults = sortedValues;
-    AppState.currentPins = sortedValues.map(item => getPinFromFaildata(item.value, item.site));
+    AppState.pinsBySite = {};
+    AppState.availableSites = [];
+    
+    sortedValues.forEach((item) => {
+        const pin = getPinFromFaildata(item.value, item.site);
+        const site = item.site || '0';
+        if (!AppState.pinsBySite[site]) {
+            AppState.pinsBySite[site] = [];
+            AppState.availableSites.push(site);
+        }
+        if (pin && pin !== '-') AppState.pinsBySite[site].push(pin);
+    });
+    
+    AppState.availableSites.sort((a, b) => parseInt(a) - parseInt(b));
+    AppState.currentPins = [];
+    Object.values(AppState.pinsBySite).forEach(pins => AppState.currentPins.push(...pins));
     
     let tableRows = '';
     sortedValues.forEach((item) => {
         const converted = convertFaildata(item.value);
         const pinInfo = getPinInfoFromPinmap(item.value, item.site);
-        
-        // Convert components based on site
         const displayComponents = convertComponentBySite(pinInfo.components, item.site);
-        
         let countClass = 'count-badge';
-        if (item.count > 10) {
-            countClass += ' danger';
-        } else if (item.count > 5) {
-            countClass += ' warning';
-        }
+        if (item.count > 10) countClass += ' danger';
+        else if (item.count > 5) countClass += ' warning';
         
-        tableRows += `
-            <tr>
-                <td><strong>${escapeHtml(item.tiu || '-')}</strong></td>
-                <td><strong>${escapeHtml(item.value)}</strong></td>
-                <td><code style="background: #f0f0f0; padding: 4px 8px; border-radius: 4px;">${escapeHtml(converted.format)}</code></td>
-                <td style="text-align: center;">${escapeHtml(item.site || '-')}</td>
-                <td style="text-align: center;"><span class="bin-badge">${escapeHtml(item.curfbin || '-')}</span></td>
-                <td style="text-align: center;"><span class="${countClass}">${item.count}</span></td>
-                <td>${escapeHtml(pinInfo.pinName)}</td>
-                <td>${escapeHtml(pinInfo.channel)}</td>
-                <td>${escapeHtml(displayComponents)}</td>
-            </tr>
-        `;
+        tableRows += `<tr><td><strong>${escapeHtml(item.tiu || '-')}</strong></td><td><strong>${escapeHtml(item.value)}</strong></td><td><code style="background: #f0f0f0; padding: 4px 8px; border-radius: 4px;">${escapeHtml(converted.format)}</code></td><td style="text-align: center;">${escapeHtml(item.site || '-')}</td><td style="text-align: center;"><span class="bin-badge">${escapeHtml(item.curfbin || '-')}</span></td><td style="text-align: center;"><span class="${countClass}">${item.count}</span></td><td>${escapeHtml(pinInfo.pinName)}</td><td>${escapeHtml(pinInfo.channel)}</td><td>${escapeHtml(displayComponents)}</td></tr>`;
     });
     
-    const html = `
-        <h3 style="margin-bottom: 15px; color: var(--primary-color);">
-            Found ${sortedValues.length} Fail Data entries
-        </h3>
-        <div class="results-table">
-            <table>
-                <thead>
-                    <tr>
-                        <th style="width: 10%">TIU</th>
-                        <th style="width: 10%">Fail Data</th>
-                        <th style="width: 15%">Hifix</th>
-                        <th style="width: 8%">Site</th>
-                        <th style="width: 10%">Bin</th>
-                        <th style="width: 8%">Count</th>
-                        <th style="width: 12%">Pin</th>
-                        <th style="width: 12%">Channel</th>
-                        <th style="width: 12%">Components</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    ${tableRows}
-                </tbody>
-            </table>
+    resultsContainer.innerHTML = `<h3 style="margin-bottom: 15px; color: var(--primary-color);">Found ${sortedValues.length} Fail Data entries</h3><div class="results-table"><table><thead><tr><th style="width: 10%">TIU</th><th style="width: 10%">Fail Data</th><th style="width: 15%">Hifix</th><th style="width: 8%">Site</th><th style="width: 10%">Bin</th><th style="width: 8%">Count</th><th style="width: 12%">Pin</th><th style="width: 12%">Channel</th><th style="width: 12%">Components</th></tr></thead><tbody>${tableRows}</tbody></table></div>`;
+    
+    displayPinListBySite();
+    
+    const siteSelectContainer = document.getElementById('site-selector-container');
+    const siteSelect = document.getElementById('site-select');
+    siteSelect.innerHTML = '<option value="all">All Sites</option>';
+    
+    if (AppState.availableSites.length > 1) {
+        AppState.availableSites.forEach(site => {
+            const option = document.createElement('option');
+            option.value = site;
+            option.textContent = `Site ${site}`;
+            siteSelect.appendChild(option);
+        });
+    }
+    
+    siteSelectContainer.style.display = 'flex';
+    siteSelectContainer.style.alignItems = 'center';
+    siteSelectContainer.style.gap = '10px';
+    
+    siteSelect.onchange = function() {
+        if (this.value === 'all') {
+            AppState.currentPins = [];
+            Object.values(AppState.pinsBySite).forEach(pins => AppState.currentPins.push(...pins));
+        } else {
+            AppState.currentPins = AppState.pinsBySite[this.value] || [];
+        }
+    };
+}
+
+function displayPinListBySite() {
+    const pinListContainer = document.getElementById('pin-list-results');
+    if (Object.keys(AppState.pinsBySite).length === 0) {
+        pinListContainer.style.display = 'none';
+        return;
+    }
+    
+    let html = '<div style="margin-bottom: 20px;">';
+    AppState.availableSites.forEach(site => {
+        const pins = AppState.pinsBySite[site];
+        if (!pins || pins.length === 0) return;
+        
+        const validPins = pins.filter(pin => pin && pin !== '-');
+        const sortedPins = [...new Set(validPins)].sort((a, b) => {
+            const regex = /([A-Z]*)(\d*)/;
+            const aMatch = a.match(regex);
+            const bMatch = b.match(regex);
+            const aLetters = aMatch[1] || '';
+            const aNumbers = aMatch[2] ? parseInt(aMatch[2]) : 0;
+            const bLetters = bMatch[1] || '';
+            const bNumbers = bMatch[2] ? parseInt(bMatch[2]) : 0;
+            if (aLetters !== bLetters) return aLetters.localeCompare(bLetters);
+            return aNumbers - bNumbers;
+        });
+        
+        if (sortedPins.length === 0) return;
+        const pinList = sortedPins.join(', ');
+        html += `<div style="margin-bottom: 15px; padding: 15px; border: 1px solid #e0e0e0; border-radius: 8px; background: #fafafa;">
+        <h4 style="margin-bottom: 10px; color: var(--primary-color);">
+        <span style="font-weight: bold; color: #E4080A;">Site ${escapeHtml(site)}</span> - Total <span style="font-weight: bold; color: #E4080A;">${sortedPins.length}</span> fail pins:
+        </h4>
+        <div class="pin-list-container">
+        <div class="pin-list-content" style="padding: 10px; background: white; border-radius: 4px; border: 1px solid #e0e0e0;">
+        ${escapeHtml(pinList)}
         </div>
-    `;
-    
-    resultsContainer.innerHTML = html;
-    
-    // Hiển thị danh sách pin
-    displayPinList(AppState.currentPins);
-    document.getElementById('show-pinmap-btn').style.display = 'inline-flex';
+        <button class="btn copy-btn" onclick="copyPinListForSite('${site}')" style="margin-top: 10px;">
+        <span class="btn-icon">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
+        <path fill="currentColor" d="M 1024,512 C 1022.976,416.768 1000.448,330.752 954.368,253.952 908.288,176.128 846.848,114.688 770.048,69.632 693.248,23.552 607.232,1.024 512,0 416.768,1.024 330.752,23.552 253.952,69.632 176.128,115.712 114.688,177.152 69.632,253.952 23.552,330.752 1.024,416.768 0,512 c 1.024,95.232 23.552,181.248 69.632,258.048 46.08,77.824 107.52,139.264 184.32,184.32 76.8,46.08 162.816,68.608 258.048,69.632 95.232,-1.024 181.248,-23.552 258.048,-69.632 77.824,-46.08 139.264,-107.52 184.32,-184.32 46.08,-76.8 68.608,-162.816 69.632,-258.048 z M 408.576,267.264 c 7.168,-23.552 21.504,-41.984 41.984,-57.344 20.48,-14.336 43.008,-21.504 69.632,-22.528 26.624,1.024 49.152,8.192 69.632,22.528 19.456,14.336 33.792,32.768 43.008,57.344 h 46.08 c 22.528,0 40.96,8.192 56.32,23.552 14.336,14.336 22.528,32.768 23.552,55.296 v 397.312 c -1.024,22.528 -9.216,40.96 -23.552,56.32 -15.36,15.36 -33.792,23.552 -56.32,23.552 h -317.44 c -22.528,0 -41.984,-8.192 -56.32,-23.552 -15.36,-15.36 -22.528,-33.792 -23.552,-56.32 V 346.112 c 1.024,-22.528 8.192,-40.96 23.552,-55.296 14.336,-15.36 33.792,-23.552 56.32,-23.552 z m -7.168,287.744 c 18.432,-2.048 27.648,-11.264 28.672,-29.696 -1.024,-18.432 -11.264,-28.672 -28.672,-29.696 -18.432,1.024 -28.672,11.264 -29.696,29.696 1.024,17.408 11.264,27.648 29.696,29.696 z m 78.848,-29.696 c 1.024,12.288 7.168,19.456 20.48,20.48 h 158.72 c 12.288,-1.024 18.432,-8.192 19.456,-20.48 -1.024,-12.288 -7.168,-19.456 -19.456,-19.456 h -158.72 c -13.312,0 -19.456,7.168 -20.48,19.456 z m -78.848,149.504 c 18.432,-2.048 27.648,-12.288 28.672,-29.696 -1.024,-18.432 -11.264,-28.672 -28.672,-30.72 -18.432,2.048 -28.672,12.288 -29.696,30.72 1.024,17.408 11.264,27.648 29.696,29.696 z m 78.848,-29.696 c 1.024,12.288 7.168,18.432 20.48,19.456 h 158.72 c 12.288,-1.024 18.432,-7.168 19.456,-19.456 -1.024,-13.312 -7.168,-20.48 -19.456,-20.48 h -158.72 c -13.312,0 -19.456,7.168 -20.48,20.48 z m 79.872,-338.944 c 0,-11.264 -4.096,-21.504 -11.264,-27.648 -8.192,-8.192 -17.408,-11.264 -28.672,-11.264 -11.264,0 -21.504,3.072 -28.672,11.264 -8.192,7.168 -11.264,16.384 -11.264,27.648 0,11.264 3.072,21.504 11.264,28.672 7.168,8.192 17.408,11.264 28.672,11.264 11.264,0 20.48,-3.072 28.672,-11.264 7.168,-8.192 11.264,-17.408 11.264,-28.672 z"/>
+        </svg>
+        </span>
+        Copy Site ${escapeHtml(site)} Pin List
+        </button>
+        </div>
+        </div>
+        `;
+    });
+    html += '</div>';
+    pinListContainer.innerHTML = html;
+    pinListContainer.style.display = 'block';
+}
+
+function copyPinListForSite(site) {
+    const pins = AppState.pinsBySite[site];
+    if (!pins || pins.length === 0) {alert('No pins to copy for this site!');return}
+    const validPins = pins.filter(pin => pin && pin !== '-');
+    const sortedPins = [...new Set(validPins)].sort((a, b) => {
+        const regex = /([A-Z]*)(\d*)/;
+        const aMatch = a.match(regex);
+        const bMatch = b.match(regex);
+        const aLetters = aMatch[1] || '';
+        const aNumbers = aMatch[2] ? parseInt(aMatch[2]) : 0;
+        const bLetters = bMatch[1] || '';
+        const bNumbers = bMatch[2] ? parseInt(bMatch[2]) : 0;
+        if (aLetters !== bLetters) return aLetters.localeCompare(bLetters);
+        return aNumbers - bNumbers;
+    });
+    const pinList = sortedPins.join(', ');
+    navigator.clipboard.writeText(pinList).then(() => {
+        const buttons = document.querySelectorAll('.copy-btn');
+        let targetBtn = null;
+        buttons.forEach(btn => {if (btn.textContent.includes(`Site ${site}`)) targetBtn = btn});
+        if (targetBtn) {
+            const originalHTML = targetBtn.innerHTML;
+            targetBtn.innerHTML = `<span class="btn-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024"><path fill="currentColor" d="M 1024,512 C 1022.976,416.768 1000.448,330.752 954.368,253.952 908.288,176.128 846.848,114.688 770.048,69.632 693.248,23.552 607.232,1.024 512,0 416.768,1.024 330.752,23.552 253.952,69.632 176.128,115.712 114.688,177.152 69.632,253.952 23.552,330.752 1.024,416.768 0,512 c 1.024,95.232 23.552,181.248 69.632,258.048 46.08,77.824 107.52,139.264 184.32,184.32 76.8,46.08 162.816,68.608 258.048,69.632 95.232,-1.024 181.248,-23.552 258.048,-69.632 77.824,-46.08 139.264,-107.52 184.32,-184.32 46.08,-76.8 68.608,-162.816 69.632,-258.048 z M 521.216,187.392 c 25.6,1.024 49.152,8.192 69.632,22.528 19.456,14.336 34.816,33.792 43.008,57.344 h 46.08 c 22.528,1.024 40.96,8.192 56.32,23.552 14.336,14.336 22.528,32.768 23.552,55.296 v 397.312 c -1.024,22.528 -9.216,40.96 -23.552,56.32 -15.36,15.36 -33.792,23.552 -56.32,23.552 h -317.44 c -22.528,0 -41.984,-8.192 -56.32,-23.552 -15.36,-15.36 -22.528,-33.792 -23.552,-56.32 V 346.112 c 1.024,-22.528 8.192,-40.96 23.552,-55.296 14.336,-15.36 33.792,-22.528 56.32,-23.552 H 409.6 c 7.168,-23.552 21.504,-41.984 41.984,-57.344 20.48,-14.336 43.008,-21.504 69.632,-22.528 z M 665.6,530.432 c 6.144,-7.168 9.216,-15.36 9.216,-24.576 v -2.048 c 0,-8.192 -3.072,-16.384 -9.216,-23.552 -8.192,-7.168 -16.384,-10.24 -25.6,-10.24 -9.216,0 -17.408,3.072 -24.576,10.24 L 481.28,614.4 c -21.504,-21.504 -35.84,-35.84 -44.032,-43.008 -7.168,-7.168 -10.24,-10.24 -10.24,-11.264 -7.168,-7.168 -15.36,-10.24 -24.576,-10.24 -10.24,0 -18.432,3.072 -25.6,10.24 -6.144,7.168 -9.216,15.36 -9.216,24.576 v 2.048 c 0,8.192 3.072,15.36 9.216,22.528 l 79.872,79.872 c 7.168,7.168 15.36,10.24 24.576,10.24 9.216,0 18.432,-3.072 25.6,-10.24 z M 521.216,346.112 c 11.264,0 20.48,-3.072 28.672,-11.264 7.168,-7.168 11.264,-17.408 11.264,-28.672 0,-11.264 -4.096,-20.48 -11.264,-27.648 -8.192,-8.192 -17.408,-11.264 -28.672,-11.264 -11.264,0 -21.504,3.072 -28.672,11.264 -8.192,7.168 -11.264,16.384 -11.264,27.648 0,11.264 3.072,20.48 11.264,28.672 7.168,8.192 17.408,11.264 28.672,11.264 z"/></svg></span>Copied!`;
+            targetBtn.classList.add('copied');
+            setTimeout(() => {targetBtn.innerHTML = originalHTML;targetBtn.classList.remove('copied')}, 2000);
+        }
+    }).catch(err => {console.error('Copy error: ', err);alert('Failed to copy!')})
 }
 
 function convertComponentBySite(components, site) {
@@ -782,13 +854,11 @@ function copyPinList() {
 
 // ===== Pin Map Modal =====
 function initPinMapModal() {
-    document.getElementById('show-pinmap-btn').addEventListener('click', () => showPinMap('faildata'));
-    document.getElementById('show-pinmap-position-btn').addEventListener('click', () => showPinMap('position'));
+    document.getElementById('show-pinmap-position-btn').addEventListener('click', () => showPinMap('position', 'all'));
     document.getElementById('close-modal').addEventListener('click', closePinMapModal);
     document.getElementById('add-custom-pins').addEventListener('click', addCustomPins);
     document.getElementById('save-pinmap').addEventListener('click', savePinMapImage);
     document.getElementById('save-pinmap-data').addEventListener('click', savePinMapData);
-    
     document.getElementById('clear-fill').addEventListener('click', clearPinFill);
     document.getElementById('flip-horizontal').addEventListener('click', flipHorizontal);
     document.getElementById('flip-vertical').addEventListener('click', flipVertical);
@@ -796,25 +866,26 @@ function initPinMapModal() {
     document.getElementById('rotate-right').addEventListener('click', rotateRight);
     document.getElementById('zoom-in').addEventListener('click', increasePinSpacing);
     document.getElementById('zoom-out').addEventListener('click', decreasePinSpacing);
-    
-    // Close modal when clicking outside
     document.getElementById('pinmap-modal').addEventListener('click', (e) => {
-        if (e.target.id === 'pinmap-modal') {
-            closePinMapModal();
-        }
+        if (e.target.id === 'pinmap-modal') closePinMapModal();
     });
 }
 
-function showPinMap(source) {
+function showPinMap(source, selectedSite = 'all') {
     if (!AppState.currentProduct) {
         alert('Please select a product first!');
         return;
     }
-    
+    if (source === 'faildata') {
+        if (selectedSite === 'all') {
+            AppState.currentPins = [];
+            Object.values(AppState.pinsBySite).forEach(pins => AppState.currentPins.push(...pins));
+        } else {
+            AppState.currentPins = AppState.pinsBySite[selectedSite] || [];
+        }
+    }
     const modal = document.getElementById('pinmap-modal');
     modal.classList.add('active');
-    
-    // Draw pin map
     drawPinMap();
 }
 
