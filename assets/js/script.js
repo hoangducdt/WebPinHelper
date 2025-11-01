@@ -179,7 +179,7 @@ function closeTab(tabId) {
 // ===== Product Selector =====
 function initProductSelector() {
     // Simulate loading pinmap files - add more products as needed
-    const products = ['SLD', 'CFD', 'CFH', 'CMD', 'CLC', 'WHL', 'X74'];
+    const products = ['SKL', 'CFD', 'CFH', 'CML S62', 'CML S102', 'CNP', 'WHL', 'X74'];
     
     const selectors = ['product-select', 'product-select-2'];
     selectors.forEach(id => {
@@ -207,11 +207,12 @@ function initProductSelector() {
 
 async function loadPinmapFiles() {
     const pinmapFiles = {
-        'SLD': './assets/pinmap/CMD.pinmap',
+        'SKL': './assets/pinmap/CMD.pinmap',
         'CFD': './assets/pinmap/CMD.pinmap',
         'CFH': './assets/pinmap/CMD.pinmap',
-        'CMD': './assets/pinmap/CMD.pinmap',
-        'CLC': './assets/pinmap/CLC.pinmap',
+        'CML S62': './assets/pinmap/S62.pinmap',
+        'CML S102': './assets/pinmap/S102.pinmap',
+        'CNP': './assets/pinmap/CLC.pinmap',
         'WHL': './assets/pinmap/WHL.pinmap',
         'X74': './assets/pinmap/X74.pinmap'
     };
@@ -305,10 +306,9 @@ function searchFaildata() {
             if (tiuMatch) {
                 tiuValue = tiuMatch[1];
                 
-                // Auto-select product based on first 3 letters of TIUNAME
-                if (tiuValue && tiuValue.length >= 3) {
-                    const firstThreeLetters = tiuValue.substring(0, 3).toUpperCase();
-                    autoSelectProduct(firstThreeLetters);
+                // Auto-select product based on TIU pattern
+                if (tiuValue && tiuValue.length >= 7) {
+                    autoSelectProduct(tiuValue);
                 }
             }
             
@@ -331,16 +331,35 @@ function searchFaildata() {
         const tabId = textarea.closest('.tab-content').id.replace('tab-content-', '');
         
         lines.forEach((line) => {
+            const faildataValues = [];
+            
+            // Search for _faildata_
             if (line.toLowerCase().includes('faildata')) {
                 const regex = /\w+_faildata_\{([^}]+)\}/gi;
                 let match;
-                const faildataValues = [];
                 
                 while ((match = regex.exec(line)) !== null) {
                     const values = match[1].split(',').map(v => v.trim());
                     faildataValues.push(...values);
                 }
+            }
+            
+            // Search for _composite_ with format X_composite_XXXXXX_XXX
+            if (line.toLowerCase().includes('composite')) {
+                const compositeRegex = /\w+_composite_(\d+)_\d+/gi;
+                let match;
                 
+                while ((match = compositeRegex.exec(line)) !== null) {
+                    const value = match[1].trim();
+                    // Only add if not -999
+                    if (value !== '-999' && value !== '999') {
+                        faildataValues.push(value);
+                    }
+                }
+            }
+            
+            // Add results if any values found
+            if (faildataValues.length > 0) {
                 results.push({
                     tab: `Part ${tabId}`,
                     tabId: tabId,
@@ -357,25 +376,49 @@ function searchFaildata() {
 }
 
 // ===== Auto Product Selection =====
-function autoSelectProduct(firstThreeLetters) {
+function autoSelectProduct(tiuValue) {
     const productSelect = document.getElementById('product-select');
     
-    if (!productSelect) return;
+    if (!productSelect || !tiuValue || tiuValue.length < 7) return;
     
-    // Find matching product option
-    const options = Array.from(productSelect.options);
-    const matchingOption = options.find(option => 
-        option.value && option.value.toUpperCase() === firstThreeLetters
-    );
+    // Extract first 3 letters and 6th-7th characters (index 5-6)
+    const first3 = tiuValue.substring(0, 3).toUpperCase();
+    const chars67 = tiuValue.substring(5, 7).toUpperCase();
+    const productKey = first3 + chars67;
     
-    if (matchingOption) {
-        productSelect.value = matchingOption.value;
-        AppState.currentProduct = matchingOption.value;
-        loadPinmapData(matchingOption.value);
+    console.log(`TIU: ${tiuValue}, Extracted: ${productKey}`);
+    
+    // Product mapping table
+    const productsData = {
+        'SLDV8': 'SKL',
+        'CFDV4': 'CFD',
+        'CFHV4': 'CFH',
+        'CMDV6': 'CML S62',
+        'CMDV4': 'CML S102',
+        'WHLV4': 'WHL',
+        'X74V4': 'X74'
+    };
+    
+    const productName = productsData[productKey];
+    
+    if (productName) {
+        // Find matching product option
+        const options = Array.from(productSelect.options);
+        const matchingOption = options.find(option => 
+            option.value && option.value === productName
+        );
         
-        console.log(`Auto-selected product: ${matchingOption.value} based on TIU: ${firstThreeLetters}`);
+        if (matchingOption) {
+            productSelect.value = matchingOption.value;
+            AppState.currentProduct = matchingOption.value;
+            loadPinmapData(matchingOption.value);
+            
+            console.log(`Auto-selected product: ${matchingOption.value} based on TIU key: ${productKey}`);
+        } else {
+            console.log(`Product name found (${productName}) but not in select options`);
+        }
     } else {
-        console.log(`No product found matching TIU: ${firstThreeLetters}`);
+        console.log(`No product found for TIU key: ${productKey}`);
     }
 }
 
@@ -428,6 +471,9 @@ function displayResults(results) {
         const converted = convertFaildata(item.value);
         const pinInfo = getPinInfoFromPinmap(item.value, item.site);
         
+        // Convert components based on site
+        const displayComponents = convertComponentBySite(pinInfo.components, item.site);
+        
         let countClass = 'count-badge';
         if (item.count > 10) {
             countClass += ' danger';
@@ -445,7 +491,7 @@ function displayResults(results) {
                 <td style="text-align: center;"><span class="${countClass}">${item.count}</span></td>
                 <td>${escapeHtml(pinInfo.pinName)}</td>
                 <td>${escapeHtml(pinInfo.channel)}</td>
-                <td>${escapeHtml(pinInfo.components)}</td>
+                <td>${escapeHtml(displayComponents)}</td>
             </tr>
         `;
     });
@@ -481,6 +527,39 @@ function displayResults(results) {
     // Hiển thị danh sách pin
     displayPinList(AppState.currentPins);
     document.getElementById('show-pinmap-btn').style.display = 'inline-flex';
+}
+
+function convertComponentBySite(components, site) {
+    if (!components || components === '-') {
+        return '-';
+    }
+    
+    const siteNum = parseInt(site);
+    
+    // Site 0 or 1: keep original
+    if (siteNum === 0 || siteNum === 1) {
+        return components;
+    }
+    
+    // Determine the replacement letter
+    let replacementLetter;
+    if (siteNum === 2 || siteNum === 3) {
+        replacementLetter = 'C';
+    } else if (siteNum === 4 || siteNum === 5) {
+        replacementLetter = 'E';
+    } else if (siteNum === 6 || siteNum === 7) {
+        replacementLetter = 'G';
+    } else {
+        return components; // Unknown site, keep original
+    }
+    
+    // Split components by comma and process each
+    return components.split(',').map(comp => {
+        comp = comp.trim();
+        // Replace the last 'A' with the replacement letter
+        // Use regex to find the last occurrence of 'A'
+        return comp.replace(/A(?=[^A]*$)/, replacementLetter);
+    }).join(', ');
 }
 
 function displayPinList(pins) {
@@ -573,7 +652,7 @@ function getPinFromFaildata(faildata, site) {
 
 // ===== Position Analysis =====
 function analyzePosition() {
-    const textarea = document.getElementById('position-textarea');
+    const textarea = document.getElementById('position-analysis-textarea');
     const content = textarea.value.trim();
     
     if (!content) {
