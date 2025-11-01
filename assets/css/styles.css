@@ -238,7 +238,7 @@ a:hover {
 .tabs-header {
     display: flex;
     gap: 0.5rem;
-    background: var(--bg-light);
+    background: rgba(0, 0, 0, 0.082);
     padding: 1rem;
     border-radius: 8px 8px 0 0;
     overflow-x: auto;
@@ -608,7 +608,7 @@ a:hover {
 
 /* ===== Pin List Results ===== */
 #pin-list-results {
-    background: white;
+    background: rgba(5, 5, 5, 0.082);
     border-radius: 8px;
     box-shadow: var(--shadow-sm);
     padding: 1.5rem;
