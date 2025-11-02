@@ -217,15 +217,15 @@ async function loadPinmapFiles() {
         'CML S62': './assets/pinmap/S62.pinmap',//OK
         'GSR': './assets/pinmap/GSR.pinmap',
         'HSW': './assets/pinmap/HSW.pinmap',//OK
-        'U42': './assets/pinmap/U42.pinmap',
+        'U42': './assets/pinmap/U42.pinmap',//OK
         'LBG': './assets/pinmap/LBG.pinmap',//OK
         'MPR': './assets/pinmap/MPR.pinmap',//OK
-        'MTP': './assets/pinmap/MTP.pinmap',
+        'MTP': './assets/pinmap/MTP.pinmap',//OK
         'SKL': './assets/pinmap/SKL.pinmap',//OK
-        'U22': './assets/pinmap/U22.pinmap',
-        'TGP': './assets/pinmap/TGP.pinmap',
-        'WHL': './assets/pinmap/WHL.pinmap',
-        'X74': './assets/pinmap/X74.pinmap',
+        'U22': './assets/pinmap/U22.pinmap',//OK
+        'TGP': './assets/pinmap/TGP.pinmap',//OK
+        'WHL': './assets/pinmap/WHL.pinmap',//OK
+        'X74': './assets/pinmap/X74.pinmap',//??
         'X76': './assets/pinmap/X76.pinmap'
     };
 
