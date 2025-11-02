@@ -181,7 +181,7 @@ function closeTab(tabId) {
 // ===== Product Selector =====
 function initProductSelector() {
     // Simulate loading pinmap files - add more products as needed
-    const products = ['ADP', 'CNP', 'CFD', 'CFH', 'CML S102', 'CML S62', 'GSR', 'HSW', 'U42', 'LBG', 'MPR', 'MTL', 'SKL', 'U22', 'TGP', 'WHL', 'X74', 'X76'];
+    const products = ['ADP', 'CNP', 'CFD', 'CFH', 'CML S102', 'CML S62', 'GSR', 'HSW', 'U42', 'LBG', 'MPR', 'MTP', 'SKL', 'U22', 'TGP', 'WHL', 'X74', 'X76'];
     
     const selectors = ['product-select', 'product-select-2'];
     selectors.forEach(id => {
@@ -217,16 +217,16 @@ async function loadPinmapFiles() {
         'CML S62': './assets/pinmap/S62.pinmap',//OK
         'GSR': './assets/pinmap/GSR.pinmap',
         'HSW': './assets/pinmap/HSW.pinmap',//OK
-        'U42': './assets/pinmap/ADP.pinmap',
+        'U42': './assets/pinmap/U42.pinmap',
         'LBG': './assets/pinmap/LBG.pinmap',//OK
         'MPR': './assets/pinmap/MPR.pinmap',//OK
-        'MTL': './assets/pinmap/ADP.pinmap',
+        'MTP': './assets/pinmap/MTP.pinmap',
         'SKL': './assets/pinmap/SKL.pinmap',//OK
-        'U22': './assets/pinmap/ADP.pinmap',
-        'TGP': './assets/pinmap/ADP.pinmap',
-        'WHL': './assets/pinmap/ADP.pinmap',
+        'U22': './assets/pinmap/U22.pinmap',
+        'TGP': './assets/pinmap/TGP.pinmap',
+        'WHL': './assets/pinmap/WHL.pinmap',
         'X74': './assets/pinmap/X74.pinmap',
-        'X76': './assets/pinmap/ADP.pinmap'
+        'X76': './assets/pinmap/X76.pinmap'
     };
 
     for (const [product, filePath] of Object.entries(pinmapFiles)) {
@@ -274,7 +274,7 @@ function autoSelectProduct(tiuValue) {
         'KUMV6': 'U42',
         'LBGX6': 'LBG',
         'MPRV8': 'MPR',
-        'MTCV4': 'MTL',
+        'MTCV4': 'MTP',
         'SLDV8': 'SKL',
         'SUMV6': 'U22',
         'TGLA6': 'TGP',
