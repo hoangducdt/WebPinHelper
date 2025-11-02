@@ -113,9 +113,6 @@ function addNewTab() {
 }
 
 function switchTab(tabId) {
-    console.log('Switching to Part:', tabId);
-    
-    // Ẩn tất cả tab
     document.querySelectorAll('.tab').forEach(tab => {
         tab.classList.remove('active');
     });
@@ -136,8 +133,6 @@ function switchTab(tabId) {
 }
 
 function closeTab(tabId) {
-    console.log('Closing Part:', tabId);
-    
     const tabElement = document.querySelector(`.tab[data-tab="${tabId}"]`);
     const contentElement = document.getElementById(`tab-content-${tabId}`);
     
@@ -183,7 +178,7 @@ function initProductSelector() {
     // Simulate loading pinmap files - add more products as needed
     const products = ['ADP', 'CNP', 'CFD', 'CFH', 'CML S102', 'CML S62', 'GSR', 'HSW', 'U42', 'LBG', 'MPR', 'MTP', 'SKL', 'U22', 'TGP', 'WHL', 'X74', 'X76'];
     
-    const selectors = ['product-select', 'product-select-2'];
+    const selectors = ['product-select', 'product-select-2', 'product-select-3'];
     selectors.forEach(id => {
         const select = document.getElementById(id);
         // Clear existing options except the first one
@@ -226,7 +221,7 @@ async function loadPinmapFiles() {
         'TGP': './assets/pinmap/TGP.pinmap',//OK
         'WHL': './assets/pinmap/WHL.pinmap',//OK
         'X74': './assets/pinmap/X74.pinmap',//??
-        'X76': './assets/pinmap/X76.pinmap'
+        'X76': './assets/pinmap/X76.pinmap'//??
     };
 
     for (const [product, filePath] of Object.entries(pinmapFiles)) {
@@ -235,7 +230,6 @@ async function loadPinmapFiles() {
             if (response.ok) {
                 const content = await response.text();
                 AppState.pinmapData[product] = parsePinmapData(content);
-                console.log(`Loaded pinmap for ${product}: ${AppState.pinmapData[product].length} pins`);
             } else {
                 console.warn(`Failed to load pinmap for ${product}: ${response.status}`);
                 // Fallback to empty data
@@ -258,9 +252,7 @@ function autoSelectProduct(tiuValue) {
     const first3 = tiuValue.substring(0, 3).toUpperCase();
     const chars67 = tiuValue.substring(5, 7).toUpperCase();
     const productKey = first3 + chars67;
-    
-    console.log(`TIU: ${tiuValue}, Extracted: ${productKey}`);
-    
+
     // Product mapping table
     const productsData = {
         'ADCV4': 'ADP',
@@ -296,8 +288,6 @@ function autoSelectProduct(tiuValue) {
             productSelect.value = matchingOption.value;
             AppState.currentProduct = matchingOption.value;
             loadPinmapData(matchingOption.value);
-            
-            console.log(`Auto-selected product: ${matchingOption.value} based on TIU key: ${productKey}`);
         } else {
             console.log(`Product name found (${productName}) but not in select options`);
         }
