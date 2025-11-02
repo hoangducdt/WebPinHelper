@@ -9,7 +9,8 @@ const AppState = {
     pinsBySite: {},
     availableSites: [],
     currentPin1: null,
-    pinScale: 20 
+    pinScale: 20,
+    selectedChannels: []
 };
 
 // ===== Initialization =====
@@ -19,7 +20,48 @@ document.addEventListener('DOMContentLoaded', () => {
     initProductSelector();
     initSearchButtons();
     initPinMapModal();
+    initTIUHelper();
+    initPartHelper();
+    initPinMapTool();
     loadPinmapFiles();
+});
+
+// ===== Auto-adjust Tooltip Position =====
+document.addEventListener('DOMContentLoaded', () => {
+    const observeTooltips = () => {
+        const tooltipElements = document.querySelectorAll('.hover-mouseenter');
+        
+        tooltipElements.forEach(element => {
+            element.addEventListener('mouseenter', function() {
+                const tooltip = this.querySelector('.tooltip');
+                if (!tooltip) return;
+                
+                // Reset class
+                tooltip.classList.remove('tooltip-bottom');
+                
+                // Kiểm tra vị trí
+                const rect = this.getBoundingClientRect();
+                const tooltipHeight = tooltip.offsetHeight || 50; // Estimate if not visible
+                const spaceAbove = rect.top;
+                const spaceBelow = window.innerHeight - rect.bottom;
+                
+                // Nếu không đủ chỗ phía trên (cần ít nhất tooltipHeight + 10px)
+                if (spaceAbove < tooltipHeight + 20 && spaceBelow > tooltipHeight + 20) {
+                    tooltip.classList.add('tooltip-bottom');
+                }
+            });
+        });
+    };
+    
+    // Chạy lần đầu
+    observeTooltips();
+    
+    // Theo dõi khi có phần tử mới được thêm vào (như modal)
+    const observer = new MutationObserver(observeTooltips);
+    observer.observe(document.body, {
+        childList: true,
+        subtree: true
+    });
 });
 
 // ===== Navigation =====
@@ -197,6 +239,11 @@ function initProductSelector() {
             AppState.currentProduct = e.target.value;
             if (e.target.value) {
                 loadPinmapData(e.target.value);
+                
+                // Nếu là product-select-3, load channels
+                if (id === 'product-select-3') {
+                    loadChannelsForProduct(e.target.value);
+                }
             }
         });
     });
@@ -1500,4 +1547,214 @@ function savePinMapData() {
     link.download = `${AppState.currentProduct}_scaled_${Date.now()}.pinmap`;
     link.click();
     URL.revokeObjectURL(link.href);
+}
+
+//TIU Helper
+function initTIUHelper() {
+    const searchInput = document.getElementById('tiu-search');
+    if (searchInput) {
+        searchInput.addEventListener('input', filterTIUs);
+        searchInput.addEventListener('focus', function() {
+            this.style.borderColor = '#00C7FD';
+        });
+        searchInput.addEventListener('blur', function() {
+            this.style.borderColor = '#e0e0e0';
+        });
+    }
+}
+
+function filterTIUs() {
+    
+}
+
+//Part Helper
+function initPartHelper() {
+    const searchInput = document.getElementById('part-search');
+    if (searchInput) {
+        searchInput.addEventListener('input', filterParts);
+        searchInput.addEventListener('focus', function() {
+            this.style.borderColor = '#00C7FD';
+        });
+        searchInput.addEventListener('blur', function() {
+            this.style.borderColor = '#e0e0e0';
+        });
+    }
+}
+
+function filterParts() {
+    
+}
+
+//Pin Map Tool
+function initPinMapTool() {
+    document.getElementById('select-all-channels').addEventListener('click', selectAllChannels);
+    document.getElementById('deselect-all-channels').addEventListener('click', deselectAllChannels);
+    document.getElementById('show-channel-pinmap').addEventListener('click', showChannelPinMap);
+    
+    // Add search functionality
+    const searchInput = document.getElementById('channel-search');
+    if (searchInput) {
+        searchInput.addEventListener('input', filterChannels);
+        searchInput.addEventListener('focus', function() {
+            this.style.borderColor = '#00C7FD';
+        });
+        searchInput.addEventListener('blur', function() {
+            this.style.borderColor = '#e0e0e0';
+        });
+    }
+}
+
+function filterChannels() {
+    const searchTerm = document.getElementById('channel-search').value.toLowerCase();
+    const channelWrappers = document.querySelectorAll('#channel-list > div');
+    let visibleCount = 0;
+    
+    channelWrappers.forEach(wrapper => {
+        const label = wrapper.querySelector('label');
+        const channelName = label.textContent.toLowerCase();
+        
+        if (channelName.includes(searchTerm)) {
+            wrapper.style.display = 'flex';
+            visibleCount++;
+        } else {
+            wrapper.style.display = 'none';
+        }
+    });
+    
+    // Update count display to show filtered results
+    const countDisplay = document.getElementById('selected-channel-count');
+    const checkedCount = document.querySelectorAll('#channel-list input[type="checkbox"]:checked').length;
+    
+    if (searchTerm && visibleCount > 0) {
+        const currentText = countDisplay.textContent;
+        if (currentText) {
+            countDisplay.textContent = `${currentText} (Showing ${visibleCount} filtered)`;
+        } else {
+            countDisplay.textContent = `Showing ${visibleCount} channel${visibleCount > 1 ? 's' : ''}`;
+            countDisplay.style.color = '#666';
+        }
+    } else if (checkedCount > 0) {
+        countDisplay.textContent = `Selected: ${checkedCount} channel${checkedCount > 1 ? 's' : ''}`;
+        countDisplay.style.color = '#E4080A';
+    } else {
+        countDisplay.textContent = '';
+    }
+}
+
+function loadChannelsForProduct(product) {
+    if (!AppState.pinmapData[product]) {
+        document.getElementById('channel-selector-container').style.display = 'none';
+        return;
+    }
+    
+    const pinmapData = AppState.pinmapData[product];
+    const channelsSet = new Set();
+    pinmapData.forEach(pin => {
+        if (pin.name && pin.name.trim()) {
+            channelsSet.add(pin.name.trim());
+        }
+    });
+    
+    const channels = Array.from(channelsSet).sort();
+    
+    if (channels.length === 0) {
+        document.getElementById('channel-selector-container').style.display = 'none';
+        return;
+    }
+    
+    document.getElementById('channel-selector-container').style.display = 'block';
+    const channelList = document.getElementById('channel-list');
+    channelList.innerHTML = '';
+    
+    channels.forEach(channel => {
+        const checkboxWrapper = document.createElement('div');
+        checkboxWrapper.className = 'channel-checkbox-wrapper';
+        
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.id = `channel-${channel}`;
+        checkbox.value = channel;
+        checkbox.className = 'channel-checkbox';
+        
+        const label = document.createElement('label');
+        label.htmlFor = `channel-${channel}`;
+        label.textContent = channel;
+        label.className = 'channel-label';
+        
+        checkbox.addEventListener('change', updateSelectedChannelCount);
+        
+        checkboxWrapper.appendChild(checkbox);
+        checkboxWrapper.appendChild(label);
+        channelList.appendChild(checkboxWrapper);
+    });
+    
+    AppState.selectedChannels = [];
+    updateSelectedChannelCount();
+}
+
+function selectAllChannels() {
+    // Chỉ chọn các channel đang hiển thị (không bị ẩn bởi filter)
+    document.querySelectorAll('#channel-list > div').forEach(wrapper => {
+        if (wrapper.style.display !== 'none') {
+            const checkbox = wrapper.querySelector('input[type="checkbox"]');
+            if (checkbox) checkbox.checked = true;
+        }
+    });
+    updateSelectedChannelCount();
+}
+
+function deselectAllChannels() {
+    // Chỉ bỏ chọn các channel đang hiển thị (không bị ẩn bởi filter)
+    document.querySelectorAll('#channel-list > div').forEach(wrapper => {
+        if (wrapper.style.display !== 'none') {
+            const checkbox = wrapper.querySelector('input[type="checkbox"]');
+            if (checkbox) checkbox.checked = false;
+        }
+    });
+    updateSelectedChannelCount();
+}
+
+function updateSelectedChannelCount() {
+    const checkboxes = document.querySelectorAll('#channel-list input[type="checkbox"]:checked');
+    const count = checkboxes.length;
+    AppState.selectedChannels = Array.from(checkboxes).map(cb => cb.value);
+    
+    const countDisplay = document.getElementById('selected-channel-count');
+    if (count > 0) {
+        countDisplay.textContent = `Selected: ${count} channel${count > 1 ? 's' : ''}`;
+        countDisplay.style.color = '#E4080A';
+    } else {
+        countDisplay.textContent = '';
+    }
+}
+
+function showChannelPinMap() {
+    if (AppState.selectedChannels.length === 0) {
+        alert('Please select at least one channel!');
+        return;
+    }
+    
+    if (!AppState.currentProduct || !AppState.pinmapData[AppState.currentProduct]) {
+        alert('No pinmap data available!');
+        return;
+    }
+    
+    const pinmapData = AppState.pinmapData[AppState.currentProduct];
+    const pinsToHighlight = [];
+    pinmapData.forEach(pin => {
+        if (AppState.selectedChannels.includes(pin.name)) {
+            pinsToHighlight.push(pin.pinName);
+        }
+    });
+    
+    if (pinsToHighlight.length === 0) {
+        alert('No pins found for selected channels!');
+        return;
+    }
+    
+    AppState.currentPins = pinsToHighlight;
+    AppState.customPins = [];
+    
+    document.getElementById('pinmap-modal').classList.add('active');
+    drawPinMap();
 }
