@@ -13,6 +13,98 @@ const AppState = {
     selectedChannels: []
 };
 
+const tiuProducts = [
+    //CPU:
+	{
+        id: 1,
+        name: "HSW (Haswell)",
+        production: "HSWH/HWS/HWR",
+        category: "CPU",
+        tiuname: "HWDLZV81LXX/HWDLZV81RXX",
+        image: "./assets/img/products/HSW.jpg",
+        pinmaps: [
+            { name: "Group Bin 39", pinlist: "A12, H13"},
+            { name: "Group DTS", pinlist: "./assets/img/pinmaps/HSWPMB.PNG"}
+        ],
+        description: "Haswell is the codename for a processor microarchitecture developed by Intel as the 'fourth-generation core' successor to the Ivy Bridge.",
+        specs: {
+            "Part Number": "ITTO-620-0062 Rev.1",
+            "Pogo Pin": "KS-B0.45W-4.3D22"
+        }
+    },
+    {
+        id: 2,
+        name: "SKL (SkyLake)",
+        production: "CFA/CFZ/KBA/KBC/SKA/SKB/SKC",
+        tiuname: "SLDLZV80LXX/SLDLZV80RXX",
+        category: "CPU",
+        image: "./assets/img/products/SKL.jpg",
+        pinmaps: [
+            { name: "Group Bin 13", pinlist: "AB25, Y32, G18"}
+        ],
+        description: "Skylake is Intel's codename for its sixth generation Core microprocessor family launched on August 5, 2015.",
+        specs: {
+            "Part Number": "ITTO-620-0093 Rev.0",
+            "Pogo Pin": "400-000089-02A",
+            "Socket": "501-501198-01E"
+        }
+    },
+	//Mobile:
+    {
+        id: 3,
+        name: "SKL U22 (Skylake U22)",
+        Production: "KBL U22",
+        tiuname: "SUMBFV62LXX/SUMBFV62RXX",
+        category: "CPU Mobile",
+        image: "./Img/SKLU22IMG.jpg",
+        description: "Skylake is Intel's codename for its sixth generation Core microprocessor family that was launched on August 5, 2015, succeeding the Broadwell microarchitecture. Skylake is a microarchitecture redesign using the same 14 nm manufacturing process technology as its predecessor, serving as a tock in Intel's tick–tock manufacturing and design model. Skylake CPUs share their microarchitecture with Kaby Lake, Coffee Lake, Whiskey Lake, and Comet Lake CPUs.",
+        specs: {
+            "Part Number": "ITTO-620-0089",
+            "Pogo Pin": "YPW-7XT03-289G2",
+            "Pin Block Assy": "500320552",
+            "Socket": "SB8386-0100",
+            "Clean Coupon": "500235876"
+        }
+    },
+];
+
+const partsList = [
+    //Part:
+    {
+        id: 1,
+        name: "KS-L0.42N-5.7D1",
+        Production: "D1",
+        category: "Parts",
+        image: "./Img/POGOPIND1IMG.JPG",
+        description: "....",
+        specs: {
+            "Part Number": "500134755"
+        }
+    },
+    {
+        id: 2,
+        name: "KS-B0.45W-4.3D19",
+        Production: "D19",
+        category: "Parts",
+        image: "./Img/POGOPIND19IMG.JPG",
+        description: "....",
+        specs: {
+            "Part Number": "500212821"
+        }
+    },
+	{
+        id: 3,
+        name: "KS-B0.45W-4.3D22",
+        Production: "D22",
+        category: "Parts",
+        image: "./Img/POGOPIND22IMG.jpg",
+        description: "....",
+        specs: {
+            "Part Number": "500246695"
+        }
+    }
+];
+
 // ===== Initialization =====
 document.addEventListener('DOMContentLoaded', () => {
     initNavigation();
