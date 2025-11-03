@@ -21,10 +21,7 @@ const tiuProducts = [
         category: "CPU",
         tiuname: "HWDLZV81LXX/HWDLZV81RXX",
         image: "./assets/img/products/HSW.jpg",
-        pinmaps: [
-            { name: "Group Bin 39", pinlist: "A12, H13"},
-            { name: "Group DTS", pinlist: "B25, Y32, G18"}
-        ],
+        showpinmap: true,
         description: "Haswell is the codename for a processor microarchitecture developed by Intel as the 'fourth-generation core' successor to the Ivy Bridge.",
         specs: {
             "Part Number": "ITTO-620-0062 Rev.1",
@@ -38,8 +35,9 @@ const tiuProducts = [
         tiuname: "SLDLZV80LXX/SLDLZV80RXX",
         category: "CPU",
         image: "./assets/img/products/SKL.jpg",
+        showpinmap: true,
         pinmaps: [
-            { name: "Group Bin 13", pinlist: "AB25, Y32, G18"}
+            { name: "Group Pin DTS", pinlist: "J14, J15, AJ9, AU9, AU10"}
         ],
         description: "Skylake is Intel's codename for its sixth generation Core microprocessor family launched on August 5, 2015.",
         specs: {
@@ -55,6 +53,7 @@ const tiuProducts = [
         tiuname: "SUMBFV62LXX/SUMBFV62RXX",
         category: "CPU Mobile",
         image: "./assets/img/products/SKLU22.jpg",
+        showpinmap: true,
         description: "Skylake is Intel's codename for its sixth generation Core microprocessor family that was launched on August 5, 2015, succeeding the Broadwell microarchitecture.",
         specs: {
             "Part Number": "ITTO-620-0089",
@@ -67,38 +66,71 @@ const tiuProducts = [
 ];
 
 const partsList = [
-    //Part:
+    //Pogo Pin:
     {
         id: 1,
         name: "KS-L0.42N-5.7D1",
         Production: "D1",
-        category: "Parts",
+        category: "Pogo Pin",
         image: "./assets/img/parts/POGOPIND1IMG.JPG",
         description: "....",
         specs: {
-            "Part Number": "500134755"
+            "IPN": "500134755"
         }
     },
     {
         id: 2,
         name: "KS-B0.45W-4.3D19",
         Production: "D19",
-        category: "Parts",
+        category: "Pogo Pin",
         image: "./assets/img/parts/POGOPIND19IMG.JPG",
         description: "....",
         specs: {
-            "Part Number": "500212821"
+            "IPN": "500212821"
         }
     },
 	{
         id: 3,
         name: "KS-B0.45W-4.3D22",
         Production: "D22",
-        category: "Parts",
+        category: "Pogo Pin",
         image: "./assets/img/parts/POGOPIND22IMG.jpg",
         description: "....",
         specs: {
-            "Part Number": "500246695"
+            "IPN": "500246695"
+        }
+    },
+    {
+        id: 4,
+        name: "400-000089-02A",
+        Production: "02A",
+        category: "Pogo Pin",
+        image: "./assets/img/parts/POGOPIN02AIMG.jpg",
+        description: "....",
+        specs: {
+            "IPN": "500149007"
+        }
+    },
+	{
+        id: 5,
+        name: "YPW-7XT03-289G2",
+        Production: "G2",
+        category: "Pogo Pin",
+        image: "./assets/img/parts/POGOPING2IMG.jpg",
+        description: "....",
+        specs: {
+            "IPN": "500230416"
+        }
+    },
+	{
+        id: 6,
+        name: "YPW-8XT03-144G3",
+        Production: "G3",
+        category: "Pogo Pin",
+        image: "./assets/img/parts/POGOPING3IMG.jpg",
+        description: "....",
+        specs: {
+            "IPN": "500212820"
         }
     }
 ];
@@ -1703,9 +1735,19 @@ function filterChannels() {
 function loadChannelsForProduct(product) {
     if (!AppState.pinmapData[product]) {
         document.getElementById('channel-selector-container').style.display = 'none';
-        // Reset kết quả phân tích khi đổi product
-        document.getElementById('channel-analysis-results').style.display = 'none';
         return;
+    }
+
+    const siteSelect = document.getElementById('channel-site');
+    siteSelect.innerHTML = '<option value="all">All Sites</option>';
+    
+    if (AppState.availableSites.length > 1) {
+        AppState.availableSites.forEach(site => {
+            const option = document.createElement('option');
+            option.value = site;
+            option.textContent = `Site ${site}`;
+            siteSelect.appendChild(option);
+        });
     }
     
     const pinmapData = AppState.pinmapData[product];
@@ -1751,6 +1793,8 @@ function loadChannelsForProduct(product) {
     
     AppState.selectedChannels = [];
     updateSelectedChannelCount();
+    // Reset kết quả phân tích khi đổi product
+    document.getElementById('channel-analysis-results').style.display = 'none';
 }
 
 function selectAllChannels() {
@@ -2039,7 +2083,7 @@ function showDetail(item, config) {
     specsHTML += '</div>';
     
     let pinmapHTML = '';
-    if (config.type === 'tiu') {
+    if (config.type === 'tiu' && item.showpinmap) {
         const code = item.tiuname || '';
         pinmapHTML = '<div class="tiu-pinmap-buttons"><h4>Pin Maps:</h4>';
         
@@ -2051,7 +2095,7 @@ function showDetail(item, config) {
                             <path fill="currentColor" d="M 149.15702,150.21487 C 49.71901,249.65288 0,370.24792 0,512 0,653.75206 49.71901,774.34710 150.21488,873.78511 249.6529,974.28097 370.2479,1024 512,1024 654.8099,1024 775.405,974.28097 874.843,873.78511 975.3388,774.34710 1025.0579,653.75206 1025.0579,512 1025.0579,370.24792 975.3388,249.65288 874.843,149.15702 775.405,49.719006 654.8099,0 512,0 370.2479,0 249.6529,49.719006 149.15702,150.21487 Z m 254.94218,55.00827 v 53.95041 h 75.1074 v -53.95041 c 2.1157,-20.09917 12.6942,-30.67769 32.7934,-32.79339 20.0992,2.1157 30.6777,12.69422 32.7934,32.79339 v 53.95041 h 75.1074 v -53.95041 c 2.1157,-20.09917 12.6942,-30.67769 31.7356,-32.79339 20.0991,2.1157 30.6776,12.69422 32.7934,32.79339 v 53.95041 c 23.2727,1.05785 43.3719,9.52066 61.3553,25.38843 15.8678,15.86777 24.3306,35.96695 25.3885,60.29752 h 53.9504 c 20.0991,2.11571 30.6777,12.69422 32.7934,32.79339 -2.1157,20.09918 -12.6943,30.67769 -32.7934,32.79339 h -53.9504 v 75.10744 h 53.9504 c 20.0991,2.1157 30.6777,12.69421 32.7934,32.79339 -2.1157,20.09917 -12.6943,30.67768 -32.7934,32.79339 h -53.9504 v 75.10743 h 53.9504 c 20.0991,2.11571 30.6777,12.69422 32.7934,31.73554 -2.1157,20.09917 -12.6943,30.67769 -32.7934,32.79339 h -53.9504 c -1.0579,24.33058 -9.5207,45.4876 -25.3885,61.35537 C 727.8017,768 707.7025,776.46281 684.4298,777.52066 v 53.95041 c -2.1158,20.09918 -12.6943,30.67769 -32.7934,32.79339 -19.0414,-2.1157 -29.6199,-12.69421 -31.7356,-32.79339 v -53.95041 h -75.1074 v 53.95041 c -2.1157,20.09918 -12.6942,30.67769 -32.7934,32.79339 -20.0992,-2.1157 -30.6777,-12.69421 -32.7934,-32.79339 v -53.95041 h -75.1074 v 53.95041 c -2.1157,20.09918 -12.6942,30.67769 -32.7934,32.79339 -20.0992,-2.1157 -30.6777,-12.69421 -32.7934,-32.79339 V 777.52066 C 315.2397,776.46281 295.1405,768 278.2149,752.13223 262.3471,736.26446 253.8843,715.10744 252.8264,690.77686 h -53.95037 c -20.09917,-2.1157 -30.67768,-12.69422 -32.79339,-32.79339 2.11571,-19.04132 12.69422,-29.61983 32.79339,-31.73554 H 252.8264 V 551.1405 h -53.95037 c -20.09917,-2.11571 -30.67768,-12.69422 -32.79339,-32.79339 2.11571,-20.09918 12.69422,-30.67769 32.79339,-32.79339 h 53.95037 v -75.10744 h -53.95037 c -20.09917,-2.1157 -30.67768,-12.69421 -32.79339,-32.79339 2.11571,-20.09917 12.69422,-30.67768 32.79339,-32.79339 h 53.95037 c 1.0579,-24.33057 9.5207,-44.42975 25.3885,-60.29752 16.9256,-15.86777 37.0248,-24.33058 60.2975,-25.38843 v -53.95041 c 2.1157,-20.09917 12.6942,-30.67769 32.7934,-32.79339 20.0992,2.1157 30.6777,12.69422 32.7934,32.79339 z M 381.8843,344.8595 c -11.6364,0 -22.2149,4.23141 -30.6777,12.69422 -8.4628,8.46281 -12.6942,19.04132 -12.6942,31.73554 v 258.1157 c 0,11.63636 4.2314,22.21487 12.6942,30.67768 7.405,8.46281 17.9835,12.69422 30.6777,12.69422 h 260.2314 c 11.6364,0 22.2149,-4.23141 29.6198,-12.69422 8.4628,-7.40495 12.6943,-17.98347 12.6943,-30.67768 v -258.1157 c 0,-11.63637 -4.2315,-22.21488 -12.6943,-31.73554 -7.4049,-8.46281 -16.9256,-12.69422 -29.6198,-12.69422 z m 285.6198,67.70248 c -1.0578,13.75207 -5.2892,26.44628 -14.8099,35.96695 -9.5206,9.52066 -22.2149,14.80991 -37.0248,14.80991 -13.752,0 -26.4463,-5.28925 -37.0248,-14.80991 -9.5206,-9.52067 -13.752,-22.21488 -14.8099,-35.96695 1.0579,-13.75206 5.2893,-26.44628 14.8099,-37.02479 9.5207,-9.52066 22.2149,-13.75207 37.0248,-14.80992 13.7521,1.05785 26.4463,5.28926 37.0248,14.80992 9.5207,9.52066 13.7521,22.21488 14.8099,37.02479 z"/>
                         </svg>
                     </span>
-                    Show Full Pin Map
+                    Show Pin Map
                 </button>
             `;
         }
