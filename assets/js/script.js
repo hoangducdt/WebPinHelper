@@ -14,8 +14,7 @@ const AppState = {
 };
 
 const tiuProducts = [
-    //CPU:
-	{
+    {
         id: 1,
         name: "HSW (Haswell)",
         production: "HSWH/HWS/HWR",
@@ -24,7 +23,7 @@ const tiuProducts = [
         image: "./assets/img/products/HSW.jpg",
         pinmaps: [
             { name: "Group Bin 39", pinlist: "A12, H13"},
-            { name: "Group DTS", pinlist: "./assets/img/pinmaps/HSWPMB.PNG"}
+            { name: "Group DTS", pinlist: "B25, Y32, G18"}
         ],
         description: "Haswell is the codename for a processor microarchitecture developed by Intel as the 'fourth-generation core' successor to the Ivy Bridge.",
         specs: {
@@ -49,15 +48,14 @@ const tiuProducts = [
             "Socket": "501-501198-01E"
         }
     },
-	//Mobile:
     {
         id: 3,
         name: "SKL U22 (Skylake U22)",
-        Production: "KBL U22",
+        production: "KBL U22",
         tiuname: "SUMBFV62LXX/SUMBFV62RXX",
         category: "CPU Mobile",
-        image: "./Img/SKLU22IMG.jpg",
-        description: "Skylake is Intel's codename for its sixth generation Core microprocessor family that was launched on August 5, 2015, succeeding the Broadwell microarchitecture. Skylake is a microarchitecture redesign using the same 14 nm manufacturing process technology as its predecessor, serving as a tock in Intel's tick–tock manufacturing and design model. Skylake CPUs share their microarchitecture with Kaby Lake, Coffee Lake, Whiskey Lake, and Comet Lake CPUs.",
+        image: "./assets/img/products/SKLU22.jpg",
+        description: "Skylake is Intel's codename for its sixth generation Core microprocessor family that was launched on August 5, 2015, succeeding the Broadwell microarchitecture.",
         specs: {
             "Part Number": "ITTO-620-0089",
             "Pogo Pin": "YPW-7XT03-289G2",
@@ -65,7 +63,7 @@ const tiuProducts = [
             "Socket": "SB8386-0100",
             "Clean Coupon": "500235876"
         }
-    },
+    }
 ];
 
 const partsList = [
@@ -75,7 +73,7 @@ const partsList = [
         name: "KS-L0.42N-5.7D1",
         Production: "D1",
         category: "Parts",
-        image: "./Img/POGOPIND1IMG.JPG",
+        image: "./assets/img/parts/POGOPIND1IMG.JPG",
         description: "....",
         specs: {
             "Part Number": "500134755"
@@ -86,7 +84,7 @@ const partsList = [
         name: "KS-B0.45W-4.3D19",
         Production: "D19",
         category: "Parts",
-        image: "./Img/POGOPIND19IMG.JPG",
+        image: "./assets/img/parts/POGOPIND19IMG.JPG",
         description: "....",
         specs: {
             "Part Number": "500212821"
@@ -97,7 +95,7 @@ const partsList = [
         name: "KS-B0.45W-4.3D22",
         Production: "D22",
         category: "Parts",
-        image: "./Img/POGOPIND22IMG.jpg",
+        image: "./assets/img/parts/POGOPIND22IMG.jpg",
         description: "....",
         specs: {
             "Part Number": "500246695"
@@ -112,8 +110,7 @@ document.addEventListener('DOMContentLoaded', () => {
     initProductSelector();
     initSearchButtons();
     initPinMapModal();
-    initTIUHelper();
-    initPartHelper();
+    initProductHelper();
     initPinMapTool();
     loadPinmapFiles();
 });
@@ -1086,6 +1083,7 @@ function copyPinList() {
 function initPinMapModal() {
     document.getElementById('show-pinmap-position-btn').addEventListener('click', () => showPinMap('position', 'all'));
     document.getElementById('close-modal').addEventListener('click', closePinMapModal);
+    document.getElementById('close-tiu-modal').addEventListener('click', closeTIUModal);
     document.getElementById('add-custom-pins').addEventListener('click', addCustomPins);
     document.getElementById('save-pinmap').addEventListener('click', savePinMapImage);
     document.getElementById('save-pinmap-data').addEventListener('click', savePinMapData);
@@ -1121,6 +1119,10 @@ function showPinMap(source, selectedSite = 'all') {
 
 function closePinMapModal() {
     document.getElementById('pinmap-modal').classList.remove('active');
+}
+
+function closeTIUModal() {
+    document.getElementById('tiu-modal').classList.remove('active');
 }
 
 function addCustomPins() {
@@ -1641,42 +1643,6 @@ function savePinMapData() {
     URL.revokeObjectURL(link.href);
 }
 
-//TIU Helper
-function initTIUHelper() {
-    const searchInput = document.getElementById('tiu-search');
-    if (searchInput) {
-        searchInput.addEventListener('input', filterTIUs);
-        searchInput.addEventListener('focus', function() {
-            this.style.borderColor = '#00C7FD';
-        });
-        searchInput.addEventListener('blur', function() {
-            this.style.borderColor = '#e0e0e0';
-        });
-    }
-}
-
-function filterTIUs() {
-    
-}
-
-//Part Helper
-function initPartHelper() {
-    const searchInput = document.getElementById('part-search');
-    if (searchInput) {
-        searchInput.addEventListener('input', filterParts);
-        searchInput.addEventListener('focus', function() {
-            this.style.borderColor = '#00C7FD';
-        });
-        searchInput.addEventListener('blur', function() {
-            this.style.borderColor = '#e0e0e0';
-        });
-    }
-}
-
-function filterParts() {
-    
-}
-
 //Pin Map Tool
 function initPinMapTool() {
     document.getElementById('select-all-channels').addEventListener('click', selectAllChannels);
@@ -1849,4 +1815,245 @@ function showChannelPinMap() {
     
     document.getElementById('pinmap-modal').classList.add('active');
     drawPinMap();
+}
+
+// ===== Product Helper (TIU & Parts) - REFACTORED =====
+function initProductHelper() {
+    // Init TIU
+    const tiuConfig = {
+        searchId: 'tiu-search',
+        filterId: 'tiu-category-filter',
+        containerId: 'tiu-products-container',
+        data: tiuProducts,
+        type: 'tiu'
+    };
+    setupHelper(tiuConfig);
+    
+    // Init Parts
+    const partsConfig = {
+        searchId: 'part-search',
+        filterId: 'parts-category-filter',
+        containerId: 'parts-container',
+        data: partsList,
+        type: 'part'
+    };
+    setupHelper(partsConfig);
+}
+
+function setupHelper(config) {
+    const searchInput = document.getElementById(config.searchId);
+    if (searchInput) {
+        searchInput.addEventListener('input', debounce(() => filterItems(config), 300));
+        searchInput.addEventListener('focus', function() {
+            this.style.borderColor = '#00C7FD';
+        });
+        searchInput.addEventListener('blur', function() {
+            this.style.borderColor = '#e0e0e0';
+        });
+    }
+    
+    setupCategories(config);
+    displayItems(config.data, config);
+}
+
+function setupCategories(config) {
+    const filter = document.getElementById(config.filterId);
+    if (!filter) return;
+    
+    const categories = [...new Set(config.data.map(p => p.category))];
+    
+    categories.forEach(cat => {
+        const btn = document.createElement('button');
+        btn.className = 'category-btn';
+        btn.textContent = cat;
+        btn.dataset.category = cat;
+        btn.addEventListener('click', () => {
+            document.querySelectorAll(`#${config.filterId} .category-btn`).forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            filterItems(config);
+        });
+        filter.appendChild(btn);
+    });
+    
+    const allBtn = filter.querySelector('[data-category="all"]');
+    if (allBtn) {
+        allBtn.addEventListener('click', () => {
+            document.querySelectorAll(`#${config.filterId} .category-btn`).forEach(b => b.classList.remove('active'));
+            allBtn.classList.add('active');
+            filterItems(config);
+        });
+    }
+}
+
+function displayItems(items, config) {
+    const container = document.getElementById(config.containerId);
+    if (!container) return;
+    
+    container.innerHTML = '';
+    
+    if (items.length === 0) {
+        container.innerHTML = '<div class="no-results">No matching items found</div>';
+        return;
+    }
+    
+    items.forEach(item => {
+        const card = document.createElement('div');
+        card.className = 'product-card';
+        
+        const prod = config.type === 'tiu' ? item.production : item.Production;
+        const tiuname = config.type === 'tiu' && item.tiuname ? `<div class="product-tiuname">${escapeHtml(item.tiuname)}</div>` : '';
+        
+        card.innerHTML = `
+            <div class="product-title"><h3>${escapeHtml(item.name)}</h3></div>
+            <img src="${item.image}" alt="${item.name}" class="product-image" onerror="this.src='./assets/img/placeholder.jpg'">
+            <div class="product-info">
+                <div class="product-production">${escapeHtml(prod)}</div>
+                ${tiuname}
+                <div class="product-category">${escapeHtml(item.category)}</div>
+            </div>
+        `;
+        
+        card.addEventListener('click', () => showDetail(item, config));
+        container.appendChild(card);
+    });
+}
+
+function filterItems(config) {
+    const searchTerm = document.getElementById(config.searchId).value.toLowerCase().trim();
+    const activeCat = document.querySelector(`#${config.filterId} .category-btn.active`)?.dataset.category || 'all';
+    
+    let filtered = config.data;
+    
+    if (activeCat !== 'all') {
+        filtered = filtered.filter(p => p.category === activeCat);
+    }
+    
+    if (searchTerm) {
+        filtered = filtered.filter(p => {
+            const prod = (config.type === 'tiu' ? p.production : p.Production || '').toLowerCase();
+            const tiu = config.type === 'tiu' && p.tiuname ? p.tiuname.toLowerCase() : '';
+            
+            return p.name.toLowerCase().includes(searchTerm) ||
+                   prod.includes(searchTerm) ||
+                   tiu.includes(searchTerm) ||
+                   p.category.toLowerCase().includes(searchTerm) ||
+                   (p.description && p.description.toLowerCase().includes(searchTerm));
+        });
+    }
+    
+    displayItems(filtered, config);
+}
+
+function showDetail(item, config) {
+    const modal = document.getElementById('tiu-modal');
+    const prod = config.type === 'tiu' ? item.production : item.Production;
+    
+    let specsHTML = '<div class="tiu-specs-grid">';
+    for (const [key, value] of Object.entries(item.specs)) {
+        specsHTML += `
+            <div class="tiu-spec-item">
+                <div class="tiu-spec-label">${escapeHtml(key)}:</div>
+                <div class="tiu-spec-value">${escapeHtml(value)}</div>
+            </div>
+        `;
+    }
+    specsHTML += '</div>';
+    
+    let pinmapHTML = '';
+    if (config.type === 'tiu') {
+        const code = item.tiuname || '';
+        pinmapHTML = '<div class="tiu-pinmap-buttons"><h4>Pin Maps:</h4>';
+        
+        if (code) {
+            pinmapHTML += `
+                <button class="btn btn-secondary btn-small" onclick="showTIUPinmap('${code}', 'Full Pin Map')">
+                    <span class="btn-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
+                            <path fill="currentColor" d="M 149.15702,150.21487 C 49.71901,249.65288 0,370.24792 0,512 0,653.75206 49.71901,774.34710 150.21488,873.78511 249.6529,974.28097 370.2479,1024 512,1024 654.8099,1024 775.405,974.28097 874.843,873.78511 975.3388,774.34710 1025.0579,653.75206 1025.0579,512 1025.0579,370.24792 975.3388,249.65288 874.843,149.15702 775.405,49.719006 654.8099,0 512,0 370.2479,0 249.6529,49.719006 149.15702,150.21487 Z m 254.94218,55.00827 v 53.95041 h 75.1074 v -53.95041 c 2.1157,-20.09917 12.6942,-30.67769 32.7934,-32.79339 20.0992,2.1157 30.6777,12.69422 32.7934,32.79339 v 53.95041 h 75.1074 v -53.95041 c 2.1157,-20.09917 12.6942,-30.67769 31.7356,-32.79339 20.0991,2.1157 30.6776,12.69422 32.7934,32.79339 v 53.95041 c 23.2727,1.05785 43.3719,9.52066 61.3553,25.38843 15.8678,15.86777 24.3306,35.96695 25.3885,60.29752 h 53.9504 c 20.0991,2.11571 30.6777,12.69422 32.7934,32.79339 -2.1157,20.09918 -12.6943,30.67769 -32.7934,32.79339 h -53.9504 v 75.10744 h 53.9504 c 20.0991,2.1157 30.6777,12.69421 32.7934,32.79339 -2.1157,20.09917 -12.6943,30.67768 -32.7934,32.79339 h -53.9504 v 75.10743 h 53.9504 c 20.0991,2.11571 30.6777,12.69422 32.7934,31.73554 -2.1157,20.09917 -12.6943,30.67769 -32.7934,32.79339 h -53.9504 c -1.0579,24.33058 -9.5207,45.4876 -25.3885,61.35537 C 727.8017,768 707.7025,776.46281 684.4298,777.52066 v 53.95041 c -2.1158,20.09918 -12.6943,30.67769 -32.7934,32.79339 -19.0414,-2.1157 -29.6199,-12.69421 -31.7356,-32.79339 v -53.95041 h -75.1074 v 53.95041 c -2.1157,20.09918 -12.6942,30.67769 -32.7934,32.79339 -20.0992,-2.1157 -30.6777,-12.69421 -32.7934,-32.79339 v -53.95041 h -75.1074 v 53.95041 c -2.1157,20.09918 -12.6942,30.67769 -32.7934,32.79339 -20.0992,-2.1157 -30.6777,-12.69421 -32.7934,-32.79339 V 777.52066 C 315.2397,776.46281 295.1405,768 278.2149,752.13223 262.3471,736.26446 253.8843,715.10744 252.8264,690.77686 h -53.95037 c -20.09917,-2.1157 -30.67768,-12.69422 -32.79339,-32.79339 2.11571,-19.04132 12.69422,-29.61983 32.79339,-31.73554 H 252.8264 V 551.1405 h -53.95037 c -20.09917,-2.11571 -30.67768,-12.69422 -32.79339,-32.79339 2.11571,-20.09918 12.69422,-30.67769 32.79339,-32.79339 h 53.95037 v -75.10744 h -53.95037 c -20.09917,-2.1157 -30.67768,-12.69421 -32.79339,-32.79339 2.11571,-20.09917 12.69422,-30.67768 32.79339,-32.79339 h 53.95037 c 1.0579,-24.33057 9.5207,-44.42975 25.3885,-60.29752 16.9256,-15.86777 37.0248,-24.33058 60.2975,-25.38843 v -53.95041 c 2.1157,-20.09917 12.6942,-30.67769 32.7934,-32.79339 20.0992,2.1157 30.6777,12.69422 32.7934,32.79339 z M 381.8843,344.8595 c -11.6364,0 -22.2149,4.23141 -30.6777,12.69422 -8.4628,8.46281 -12.6942,19.04132 -12.6942,31.73554 v 258.1157 c 0,11.63636 4.2314,22.21487 12.6942,30.67768 7.405,8.46281 17.9835,12.69422 30.6777,12.69422 h 260.2314 c 11.6364,0 22.2149,-4.23141 29.6198,-12.69422 8.4628,-7.40495 12.6943,-17.98347 12.6943,-30.67768 v -258.1157 c 0,-11.63637 -4.2315,-22.21488 -12.6943,-31.73554 -7.4049,-8.46281 -16.9256,-12.69422 -29.6198,-12.69422 z m 285.6198,67.70248 c -1.0578,13.75207 -5.2892,26.44628 -14.8099,35.96695 -9.5206,9.52066 -22.2149,14.80991 -37.0248,14.80991 -13.752,0 -26.4463,-5.28925 -37.0248,-14.80991 -9.5206,-9.52067 -13.752,-22.21488 -14.8099,-35.96695 1.0579,-13.75206 5.2893,-26.44628 14.8099,-37.02479 9.5207,-9.52066 22.2149,-13.75207 37.0248,-14.80992 13.7521,1.05785 26.4463,5.28926 37.0248,14.80992 9.5207,9.52066 13.7521,22.21488 14.8099,37.02479 z"/>
+                        </svg>
+                    </span>
+                    Show Full Pin Map
+                </button>
+            `;
+        }
+        
+        if (item.pinmaps && item.pinmaps.length > 0) {
+            item.pinmaps.forEach(pm => {
+                pinmapHTML += `
+                    <button class="btn btn-primary btn-small" onclick='showTIUPinmapWithPins(${JSON.stringify(code)}, ${JSON.stringify(pm.name)}, ${JSON.stringify(pm.pinlist)})'>
+                        <span class="btn-icon">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
+                                <path fill="currentColor" d="M 149.15702,150.21487 C 49.71901,249.65288 0,370.24792 0,512 0,653.75206 49.71901,774.34710 150.21488,873.78511 249.6529,974.28097 370.2479,1024 512,1024 654.8099,1024 775.405,974.28097 874.843,873.78511 975.3388,774.34710 1025.0579,653.75206 1025.0579,512 1025.0579,370.24792 975.3388,249.65288 874.843,149.15702 775.405,49.719006 654.8099,0 512,0 370.2479,0 249.6529,49.719006 149.15702,150.21487 Z m 254.94218,55.00827 v 53.95041 h 75.1074 v -53.95041 c 2.1157,-20.09917 12.6942,-30.67769 32.7934,-32.79339 20.0992,2.1157 30.6777,12.69422 32.7934,32.79339 v 53.95041 h 75.1074 v -53.95041 c 2.1157,-20.09917 12.6942,-30.67769 31.7356,-32.79339 20.0991,2.1157 30.6776,12.69422 32.7934,32.79339 v 53.95041 c 23.2727,1.05785 43.3719,9.52066 61.3553,25.38843 15.8678,15.86777 24.3306,35.96695 25.3885,60.29752 h 53.9504 c 20.0991,2.11571 30.6777,12.69422 32.7934,32.79339 -2.1157,20.09918 -12.6943,30.67769 -32.7934,32.79339 h -53.9504 v 75.10744 h 53.9504 c 20.0991,2.1157 30.6777,12.69421 32.7934,32.79339 -2.1157,20.09917 -12.6943,30.67768 -32.7934,32.79339 h -53.9504 v 75.10743 h 53.9504 c 20.0991,2.11571 30.6777,12.69422 32.7934,31.73554 -2.1157,20.09917 -12.6943,30.67769 -32.7934,32.79339 h -53.9504 c -1.0579,24.33058 -9.5207,45.4876 -25.3885,61.35537 C 727.8017,768 707.7025,776.46281 684.4298,777.52066 v 53.95041 c -2.1158,20.09918 -12.6943,30.67769 -32.7934,32.79339 -19.0414,-2.1157 -29.6199,-12.69421 -31.7356,-32.79339 v -53.95041 h -75.1074 v 53.95041 c -2.1157,20.09918 -12.6942,30.67769 -32.7934,32.79339 -20.0992,-2.1157 -30.6777,-12.69421 -32.7934,-32.79339 v -53.95041 h -75.1074 v 53.95041 c -2.1157,20.09918 -12.6942,30.67769 -32.7934,32.79339 -20.0992,-2.1157 -30.6777,-12.69421 -32.7934,-32.79339 V 777.52066 C 315.2397,776.46281 295.1405,768 278.2149,752.13223 262.3471,736.26446 253.8843,715.10744 252.8264,690.77686 h -53.95037 c -20.09917,-2.1157 -30.67768,-12.69422 -32.79339,-32.79339 2.11571,-19.04132 12.69422,-29.61983 32.79339,-31.73554 H 252.8264 V 551.1405 h -53.95037 c -20.09917,-2.11571 -30.67768,-12.69422 -32.79339,-32.79339 2.11571,-20.09918 12.69422,-30.67769 32.79339,-32.79339 h 53.95037 v -75.10744 h -53.95037 c -20.09917,-2.1157 -30.67768,-12.69421 -32.79339,-32.79339 2.11571,-20.09917 12.69422,-30.67768 32.79339,-32.79339 h 53.95037 c 1.0579,-24.33057 9.5207,-44.42975 25.3885,-60.29752 16.9256,-15.86777 37.0248,-24.33058 60.2975,-25.38843 v -53.95041 c 2.1157,-20.09917 12.6942,-30.67769 32.7934,-32.79339 20.0992,2.1157 30.6777,12.69422 32.7934,32.79339 z M 381.8843,344.8595 c -11.6364,0 -22.2149,4.23141 -30.6777,12.69422 -8.4628,8.46281 -12.6942,19.04132 -12.6942,31.73554 v 258.1157 c 0,11.63636 4.2314,22.21487 12.6942,30.67768 7.405,8.46281 17.9835,12.69422 30.6777,12.69422 h 260.2314 c 11.6364,0 22.2149,-4.23141 29.6198,-12.69422 8.4628,-7.40495 12.6943,-17.98347 12.6943,-30.67768 v -258.1157 c 0,-11.63637 -4.2315,-22.21488 -12.6943,-31.73554 -7.4049,-8.46281 -16.9256,-12.69422 -29.6198,-12.69422 z m 285.6198,67.70248 c -1.0578,13.75207 -5.2892,26.44628 -14.8099,35.96695 -9.5206,9.52066 -22.2149,14.80991 -37.0248,14.80991 -13.752,0 -26.4463,-5.28925 -37.0248,-14.80991 -9.5206,-9.52067 -13.752,-22.21488 -14.8099,-35.96695 1.0579,-13.75206 5.2893,-26.44628 14.8099,-37.02479 9.5207,-9.52066 22.2149,-13.75207 37.0248,-14.80992 13.7521,1.05785 26.4463,5.28926 37.0248,14.80992 9.5207,9.52066 13.7521,22.21488 14.8099,37.02479 z"/>
+                            </svg>
+                        </span>
+                        ${escapeHtml(pm.name)}
+                    </button>
+                `;
+            });
+        }
+        
+        pinmapHTML += '</div>';
+    }
+    
+    document.getElementById('tiu-modal-body').innerHTML = `
+        <img src="${item.image}" alt="${item.name}" class="tiu-modal-image" onerror="this.src='./assets/img/placeholder.jpg'">
+        <h2 class="tiu-modal-title">${escapeHtml(item.name)}</h2>
+        <div class="tiu-modal-production">${escapeHtml(prod)}</div>
+        ${config.type === 'tiu' && item.tiuname ? `<div class="tiu-modal-production" style="color: var(--primary-color);">TIU: ${escapeHtml(item.tiuname)}</div>` : ''}
+        <div class="tiu-modal-description">${escapeHtml(item.description)}</div>
+        ${specsHTML}
+        ${pinmapHTML}
+    `;
+    
+    modal.classList.add('active');
+}
+
+function showTIUPinmap(productCode, title) {
+    // Select product từ dropdown
+    const productSelect = document.getElementById('product-select');
+    if (productSelect) {
+        // Tìm option phù hợp
+        if (productCode && productCode.length >= 7) {
+            autoSelectProduct(productCode);
+        }
+    }
+    
+    // Clear pins và show modal
+    AppState.currentPins = [];
+    AppState.customPins = [];
+    
+    const modal = document.getElementById('pinmap-modal');
+    modal.classList.add('active');
+    drawPinMap();
+}
+
+function showTIUPinmapWithPins(productCode, title, pinlist) {
+    // Select product
+    const productSelect = document.getElementById('product-select');
+    if (productSelect) {
+        if (productCode && productCode.length >= 7) {
+            autoSelectProduct(productCode);
+        }
+    }
+    
+    // Parse pinlist
+    let pins = [];
+    if (typeof pinlist === 'string') {
+        pins = pinlist.split(',').map(p => p.trim()).filter(p => p);
+    }
+    
+    AppState.currentPins = pins;
+    AppState.customPins = [];
+    
+    const modal = document.getElementById('pinmap-modal');
+    modal.classList.add('active');
+    drawPinMap();
+}
+
+function debounce(func, timeout = 300) {
+    let timer;
+    return (...args) => {
+        clearTimeout(timer);
+        timer = setTimeout(() => { func.apply(this, args); }, timeout);
+    };
 }

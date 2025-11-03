@@ -342,6 +342,12 @@
                             placeholder="Search TIU/Product..." 
                         />
                     </div>
+
+                    <div class="channel-button-group" id="tiu-category-filter">
+                        <button class="category-btn active" data-category="all">All</button>
+                    </div>
+                    
+                    <div class="products-grid" id="tiu-products-container"></div>
                 </div>
             </section>
 
@@ -551,6 +557,12 @@ Example:
                             placeholder="Search Part..." 
                         />
                     </div>
+
+                    <div class="channel-button-group" id="parts-category-filter">
+                        <button class="category-btn active" data-category="all">All</button>
+                    </div>
+                    
+                    <div class="products-grid" id="parts-container"></div>
                 </div>
             </section>
 
@@ -652,6 +664,25 @@ Example:
             </section>
             
         </main>
+    </div>
+
+    <!-- TIU Modal -->
+    <div id="tiu-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Product Details</h2>
+                <div class="modal-controls">
+                    <button class="btnsvg hover-mouseenter" id="close-tiu-modal">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
+                            <path fill="currentColor"
+                                d="m 512,1024 c 95.232,-1.024 181.248,-23.552 258.048,-69.632 76.8,-45.056 138.24,-106.496 184.32,-184.32 C 1000.448,693.248 1022.976,607.232 1024,512 1022.976,416.768 1000.448,330.752 954.368,253.952 909.312,177.152 847.872,115.712 770.048,69.632 693.248,23.552 607.232,1.024 512,0 416.768,1.024 330.752,23.552 253.952,69.632 177.152,114.688 115.712,176.128 69.632,253.952 23.552,330.752 1.024,416.768 0,512 c 1.024,95.232 23.552,181.248 69.632,258.048 45.056,76.8 106.496,138.24 184.32,184.32 76.8,46.08 162.816,68.608 258.048,69.632 z M 350.208,350.208 c 11.264,-9.216 22.528,-13.312 33.792,-13.312 11.264,0 22.528,4.096 33.792,13.312 L 512,444.416 606.208,350.208 c 11.264,-9.216 22.528,-13.312 33.792,-13.312 11.264,0 22.528,4.096 33.792,13.312 9.216,11.264 14.336,22.528 14.336,33.792 0,11.264 -5.12,22.528 -14.336,33.792 L 579.584,512 l 94.208,94.208 c 9.216,11.264 14.336,22.528 14.336,33.792 0,11.264 -5.12,22.528 -14.336,33.792 -11.264,9.216 -22.528,13.312 -33.792,13.312 -11.264,0 -22.528,-4.096 -33.792,-13.312 L 512,579.584 417.792,673.792 c -11.264,9.216 -22.528,13.312 -33.792,13.312 -11.264,0 -22.528,-4.096 -33.792,-13.312 -9.216,-11.264 -14.336,-22.528 -14.336,-33.792 0,-11.264 5.12,-22.528 14.336,-33.792 L 444.416,512 350.208,417.792 C 340.992,406.528 335.872,395.264 335.872,384 c 0,-11.264 5.12,-22.528 14.336,-33.792 z" />
+                        </svg>
+                        <div class="tooltip">Close</div>
+                    </button>
+                </div>
+            </div>
+            <div class="modal-body" id="tiu-modal-body"></div>
+        </div>
     </div>
 
     <!-- Pin Map Modal -->
