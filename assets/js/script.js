@@ -1647,6 +1647,7 @@ function savePinMapData() {
 function initPinMapTool() {
     document.getElementById('select-all-channels').addEventListener('click', selectAllChannels);
     document.getElementById('deselect-all-channels').addEventListener('click', deselectAllChannels);
+    document.getElementById('show-channel-analysis').addEventListener('click', displayChannelAnalysisResults);
     document.getElementById('show-channel-pinmap').addEventListener('click', showChannelPinMap);
     
     // Add search functionality
@@ -1702,6 +1703,8 @@ function filterChannels() {
 function loadChannelsForProduct(product) {
     if (!AppState.pinmapData[product]) {
         document.getElementById('channel-selector-container').style.display = 'none';
+        // Reset kết quả phân tích khi đổi product
+        document.getElementById('channel-analysis-results').style.display = 'none';
         return;
     }
     
@@ -1787,10 +1790,7 @@ function updateSelectedChannelCount() {
 }
 
 function showChannelPinMap() {
-    if (AppState.selectedChannels.length === 0) {
-        alert('Please select at least one channel!');
-        return;
-    }
+    
     
     if (!AppState.currentProduct || !AppState.pinmapData[AppState.currentProduct]) {
         alert('No pinmap data available!');
@@ -1815,6 +1815,85 @@ function showChannelPinMap() {
     
     document.getElementById('pinmap-modal').classList.add('active');
     drawPinMap();
+}
+
+function displayChannelAnalysisResults() {
+    const resultsDiv = document.getElementById('channel-analysis-results');
+    const tbody = document.getElementById('channel-analysis-tbody');
+
+    if (AppState.selectedChannels.length === 0) {
+        alert('Please select at least one channel!');
+        return;
+    }
+    
+    if (!AppState.currentProduct || !AppState.pinmapData[AppState.currentProduct]) {
+        return;
+    }
+    
+    const pinmapData = AppState.pinmapData[AppState.currentProduct];
+    tbody.innerHTML = '';
+    
+    // Lặp qua từng channel đã chọn
+    AppState.selectedChannels.forEach(channelName => {
+        // Lọc các pin thuộc channel này
+        const channelPins = pinmapData.filter(pin => pin.name === channelName);
+        
+        if (channelPins.length === 0) return;
+        
+        // Tạo danh sách pins (sắp xếp)
+        const pinList = channelPins
+            .map(p => p.pinName)
+            .sort((a, b) => {
+                const regex = /([A-Z]*)(\d*)/;
+                const aMatch = a.match(regex);
+                const bMatch = b.match(regex);
+                const aLetters = aMatch[1] || '';
+                const aNumbers = aMatch[2] ? parseInt(aMatch[2]) : 0;
+                const bLetters = bMatch[1] || '';
+                const bNumbers = bMatch[2] ? parseInt(bMatch[2]) : 0;
+                if (aLetters !== bLetters) return aLetters.localeCompare(bLetters);
+                return aNumbers - bNumbers;
+            })
+            .join(', ');
+        
+        // Lấy components (loại bỏ trùng lặp)
+        const componentsSet = new Set();
+        channelPins.forEach(pin => {
+            if (pin.components && pin.components !== '-') {
+                pin.components.split(',').forEach(comp => {
+                    componentsSet.add(comp.trim());
+                });
+            }
+        });
+        const componentsList = Array.from(componentsSet).sort().join(', ');
+        
+        // Tạo Hifix list từ faildata
+        const hifixList = Array.from(new Set(
+            channelPins
+                .map(pin => {
+                    // Tìm faildata từ site0 (hoặc site khác nếu cần)
+                    const faildata = pin.site0 || pin.site1 || '-';
+                    if (faildata === '-' || !faildata) return null;
+
+                    const converted = convertFaildata(faildata);
+                    return converted.format;
+                })
+                .filter(h => h !== null)
+        )).sort().join(', ');
+        
+        // Tạo row
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td><strong>${escapeHtml(channelName)}</strong></td>
+            <td class="pin-list-cell">${escapeHtml(pinList)}</td>
+            <td class="components-cell">${escapeHtml(componentsList || '-')}</td>
+            <td class="hifix-list-cell">${escapeHtml(hifixList || '-')}</td>
+        `;
+        tbody.appendChild(row);
+    });
+    
+    resultsDiv.style.display = 'block';
+    document.getElementById('show-channel-pinmap-container').style.display = 'inline-flex';
 }
 
 // ===== Product Helper (TIU & Parts) - REFACTORED =====
@@ -1995,11 +2074,12 @@ function showDetail(item, config) {
         pinmapHTML += '</div>';
     }
     
+    document.getElementById('product-name-title').innerHTML = `${escapeHtml(item.name)}`;
+
     document.getElementById('tiu-modal-body').innerHTML = `
         <img src="${item.image}" alt="${item.name}" class="tiu-modal-image" onerror="this.src='./assets/img/intel.png'">
-        <h2 class="tiu-modal-title">${escapeHtml(item.name)}</h2>
         <div class="tiu-modal-production">${escapeHtml(prod)}</div>
-        ${config.type === 'tiu' && item.tiuname ? `<div class="tiu-modal-production" style="color: var(--primary-color);">TIU: ${escapeHtml(item.tiuname)}</div>` : ''}
+        ${config.type === 'tiu' && item.tiuname ? `<div class="tiu-modal-production" style="color: var(--primary-color);">${escapeHtml(item.tiuname)}</div>` : ''}
         <div class="tiu-modal-description">${escapeHtml(item.description)}</div>
         ${specsHTML}
         ${pinmapHTML}
