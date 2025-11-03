@@ -1905,7 +1905,7 @@ function displayItems(items, config) {
         
         card.innerHTML = `
             <div class="product-title"><h3>${escapeHtml(item.name)}</h3></div>
-            <img src="${item.image}" alt="${item.name}" class="product-image" onerror="this.src='./assets/img/placeholder.jpg'">
+            <img src="${item.image}" alt="${item.name}" class="product-image" onerror="this.src='./assets/img/intel.png'">
             <div class="product-info">
                 <div class="product-production">${escapeHtml(prod)}</div>
                 ${tiuname}
@@ -1996,7 +1996,7 @@ function showDetail(item, config) {
     }
     
     document.getElementById('tiu-modal-body').innerHTML = `
-        <img src="${item.image}" alt="${item.name}" class="tiu-modal-image" onerror="this.src='./assets/img/placeholder.jpg'">
+        <img src="${item.image}" alt="${item.name}" class="tiu-modal-image" onerror="this.src='./assets/img/intel.png'">
         <h2 class="tiu-modal-title">${escapeHtml(item.name)}</h2>
         <div class="tiu-modal-production">${escapeHtml(prod)}</div>
         ${config.type === 'tiu' && item.tiuname ? `<div class="tiu-modal-production" style="color: var(--primary-color);">TIU: ${escapeHtml(item.tiuname)}</div>` : ''}
